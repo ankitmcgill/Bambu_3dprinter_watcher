@@ -1,0 +1,22 @@
+# Terminal Colors
+# 9/25/25
+
+#!/bin/bash
+
+# Terminal Color Definitions
+BLACK="\033[30m"
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
+MAGENTA="\033[35m"
+CYAN="\033[36m"
+LIGHT_GRAY="\033[37m"
+LIGHT_RED="\033[91m"
+LIGHT_GREEN="\033[92m"
+LIGHT_YELLOW="\033[93m"
+LIGHT_BLUE="\033[94m"
+LIGHT_MAGENTA="\033[95m"
+LIGHT_CYAN="\033[96m"
+ENDCOLOR="\033[0m"
+
