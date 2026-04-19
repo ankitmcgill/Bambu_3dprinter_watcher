@@ -88,6 +88,11 @@ Reference Links
 ```
 
 ### To monitor printer (Through web based mqtt broker)
+
+<span style="color:red">
+Printer is the MQTT message publisher. Messages are only received when the printer is powered on. If the printer is turned OFF mqtt messages will stop
+</span>
+
 ```bash
   python3 ./cli_tools/monitor.py u_1725975974 AABY_woaIZ1Hfvp4eXWQCdCgP5wbbJQ0n_Tgbg9DUIk1yFP41BsKQuFa8CCEv_BP1Or3265xTCpD-_JvmT4stCpZ4wsg3IN3F0eElaGDVZErCpcQF6MQe8d5qj6cMO4WZQPMwlGI92MAObl0 01P00C592002285
   ================================================================================
