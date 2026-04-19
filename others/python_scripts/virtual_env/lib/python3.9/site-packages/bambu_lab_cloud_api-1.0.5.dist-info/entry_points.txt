@@ -1,0 +1,4 @@
+[console_scripts]
+bambu-camera = cli_tools.camera_viewer:main
+bambu-monitor = cli_tools.monitor:main
+bambu-query = cli_tools.query:main
