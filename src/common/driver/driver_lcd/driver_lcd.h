@@ -1,0 +1,32 @@
+// DRIVER_LCD
+// SEPTEMBER 30, 2025
+
+#ifndef _DRIVER_LCD_
+#define _DRIVER_LCD_
+
+#include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <stdbool.h>
+
+#include "util_dataqueue.h"
+
+#define DRIVER_LCD_LVGL_TICK_PERIOD_MS      (2)
+#define DRIVER_LCD_LVGL_TASK_PERIOD_MS      (50)
+
+#define DRIVER_LCD_DISPLAY_HRES             (170)
+#define DRIVER_LCD_DISPLAY_VRES             (320)
+
+#define DRIVER_LCD_DATAQUEUE_MAX            (4)
+
+typedef enum {
+    DRIVER_LCD_COMMAND_DEMO = 0,
+    DRIVER_LCD_COMMAND_LOAD_UI,
+    DRIVER_LCD_COMMAND_REFRESH_UI,
+}driver_lcd_command_type_t;
+
+bool DRIVER_LCD_Init(void);
+
+bool DRIVER_LCD_AddCommand(util_dataqueue_item_t* dq_i);
+
+#endif
