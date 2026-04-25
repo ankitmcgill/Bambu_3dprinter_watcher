@@ -257,10 +257,10 @@ static void s_task_lvgl(void *arg)
                     switch(dq_i.data)
                     {
                         case DRIVER_LCD_COMMAND_DEMO:
-                            #if LV_USE_DEMO_BENCHMARK
-                            lv_demo_benchmark();
+                            #if LV_USE_DEMO_WIDGETS
+                            lv_demo_widgets();
                             #else
-                            ESP_LOGW(DEBUG_TAG_DRIVER_LCD, "LV_USE_DEMO_BENCHMARK not enabled in menuconfig");
+                            ESP_LOGW(DEBUG_TAG_DRIVER_LCD, "LV_USE_DEMO_WIDGETS not enabled in menuconfig");
                             #endif
                             break;
 
