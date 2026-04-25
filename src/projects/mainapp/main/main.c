@@ -88,7 +88,7 @@ void app_main(void)
     // Connect To Wifi
     util_dataqueue_item_t dq_i;
     dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_DEMO;
+    dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI;
     DRIVER_LCD_AddCommand(&dq_i);
 
     while(true)

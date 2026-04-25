@@ -25,8 +25,9 @@
 #include "define_rtos_tasks.h"
 #include "bsp.h"
 
-#ifdef CONFIG_INCLUDE_UI
-#include "ui.h"
+#if __has_include("ui_printer_status.h")
+#include "ui_printer_status.h"
+#define DRIVER_LCD_HAS_PROJECT_UI 1
 #endif
 
 // Private Defines
@@ -265,6 +266,9 @@ static void s_task_lvgl(void *arg)
                             break;
 
                         case DRIVER_LCD_COMMAND_LOAD_UI:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            ui_printer_status_create(lv_screen_active());
+                            #endif
                             break;
 
                         case DRIVER_LCD_COMMAND_REFRESH_UI:

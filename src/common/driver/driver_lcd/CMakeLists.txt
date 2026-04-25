@@ -13,6 +13,4 @@ idf_component_register(SRCS "driver_lcd.c"
                         REQUIRES util_dataqueue
 )
 
-# if(CONFIG_INCLUDE_UI)
-    idf_component_optional_requires(PRIVATE ui)
-# endif()
+idf_component_optional_requires(PRIVATE project_ui)
