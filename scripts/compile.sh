@@ -37,7 +37,7 @@ for arg in "$@"; do
     if $found; then
         printf "${LIGHT_YELLOW}*** "$arg" ***${ENDCOLOR}\n"
         if [ "$arg" = "set-target" ]; then
-            idf.py "$arg" esp32s3
+            idf.py "$arg" esp32
         else
             idf.py "$arg"
         fi
