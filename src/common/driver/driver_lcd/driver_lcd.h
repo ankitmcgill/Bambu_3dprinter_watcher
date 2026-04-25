@@ -19,6 +19,9 @@
 
 #define DRIVER_LCD_DATAQUEUE_MAX            (4)
 
+#define DRIVER_LCD_SPI_HOST                 SPI2_HOST
+#define DRIVER_LCD_SPI_CLK_HZ               (40 * 1000 * 1000)
+
 typedef enum {
     DRIVER_LCD_COMMAND_DEMO = 0,
     DRIVER_LCD_COMMAND_LOAD_UI,

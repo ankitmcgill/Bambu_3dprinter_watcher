@@ -9,7 +9,7 @@
 
 idf_component_register(SRCS "driver_lcd.c"
                         INCLUDE_DIRS "include"
-                        PRIV_REQUIRES esp_lcd esp_timer lvgl__lvgl esp_common defines bsp
+                        PRIV_REQUIRES  esp_lcd esp_timer lvgl__lvgl esp_common defines bsp driver
                         REQUIRES util_dataqueue
 )
 
