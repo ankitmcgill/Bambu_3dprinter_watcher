@@ -31,7 +31,6 @@ typedef struct  {
 /**********************
  *  STATIC VARIABLES
  **********************/
-
 static const demo_entry_info_t demos_entry_info[] = {
 #if LV_USE_DEMO_WIDGETS
     { "widgets", .entry_cb = lv_demo_widgets },
@@ -39,6 +38,9 @@ static const demo_entry_info_t demos_entry_info[] = {
 
 #if LV_USE_DEMO_MUSIC
     { "music", .entry_cb = lv_demo_music },
+#endif
+#if LV_USE_DEMO_MULTILANG
+    { "multilang", .entry_cb = lv_demo_multilang },
 #endif
 
 #if LV_USE_DEMO_STRESS
@@ -49,12 +51,20 @@ static const demo_entry_info_t demos_entry_info[] = {
     { "keypad_encoder", .entry_cb = lv_demo_keypad_encoder },
 #endif
 
-#if LV_USE_DEMO_VECTOR_GRAPHIC && LV_USE_VECTOR_GRAPHIC
-    { "vector_graphic_buffered", .entry_cb = lv_demo_vector_graphic_buffered },
+#if LV_USE_DEMO_FLEX_LAYOUT
+    { "flex_layout", .entry_cb = lv_demo_flex_layout },
+#endif
+
+#if LV_USE_DEMO_TRANSFORM
+    { "transform", .entry_cb = lv_demo_transform },
+#endif
+
+#if LV_USE_DEMO_SCROLL
+    { "scroll", .entry_cb = lv_demo_scroll },
 #endif
 
 #if LV_USE_DEMO_VECTOR_GRAPHIC && LV_USE_VECTOR_GRAPHIC
-    { "vector_graphic_not_buffered", .entry_cb = lv_demo_vector_graphic_not_buffered },
+    { "vector_graphic", .entry_cb = lv_demo_vector_graphic },
 #endif
 
 #if LV_USE_DEMO_BENCHMARK
@@ -71,12 +81,6 @@ static const demo_entry_info_t demos_entry_info[] = {
 /**********************
  *   GLOBAL FUNCTIONS
  **********************/
-void lv_demo_args_init(lv_demo_args_t * args)
-{
-    LV_ASSERT_NULL(args);
-    lv_memzero(args, sizeof(lv_demo_args_t));
-    args->parent = lv_screen_active();
-}
 
 bool lv_demos_create(char * info[], int size)
 {

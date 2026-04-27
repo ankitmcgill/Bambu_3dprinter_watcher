@@ -1,5 +1,5 @@
-/**
- * @file lv_ili9341.h
+/*
+ * lv_ili9341.h
  *
  * This driver is just a wrapper around the generic MIPI compatible LCD controller driver
  *
@@ -84,11 +84,10 @@ void lv_ili9341_send_cmd_list(lv_display_t * disp, const uint8_t * cmd_list);
  *      MACROS
  **********************/
 
-
-#endif /*LV_USE_ILI9341*/
-
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif
 
-#endif /*LV_ILI9341_H*/
+#endif /*LV_USE_ILI9341*/
+
+#endif /* LV_ILI9341_H */

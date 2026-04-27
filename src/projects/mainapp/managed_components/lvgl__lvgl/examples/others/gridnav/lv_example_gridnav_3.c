@@ -4,7 +4,7 @@
 static void cont_sub_event_cb(lv_event_t * e)
 {
     uint32_t k = lv_event_get_key(e);
-    lv_obj_t * obj = lv_event_get_target_obj(e);
+    lv_obj_t * obj = lv_event_get_target(e);
     if(k == LV_KEY_ENTER) {
         lv_group_focus_obj(obj);
     }
@@ -23,7 +23,7 @@ void lv_example_gridnav_3(void)
      *there is a keyboard indev*/
 
     lv_obj_t * cont_main = lv_obj_create(lv_screen_active());
-    lv_gridnav_add(cont_main, (lv_gridnav_ctrl_t)(LV_GRIDNAV_CTRL_ROLLOVER | LV_GRIDNAV_CTRL_SCROLL_FIRST));
+    lv_gridnav_add(cont_main, LV_GRIDNAV_CTRL_ROLLOVER | LV_GRIDNAV_CTRL_SCROLL_FIRST);
 
     /*Only the container needs to be in a group*/
     lv_group_add_obj(lv_group_get_default(), cont_main);
@@ -46,7 +46,7 @@ void lv_example_gridnav_3(void)
     label = lv_label_create(btn);
     lv_label_set_text(label, "Button 2");
 
-    /*Create another container with long text to show how LV_GRIDNAV_CTRL_SCROLL_FIRST works*/
+    /*Create an other container with long text to show how LV_GRIDNAV_CTRL_SCROLL_FIRST works*/
     lv_obj_t * cont_sub1 = lv_obj_create(cont_main);
     lv_obj_set_size(cont_sub1, lv_pct(100), 100);
 
@@ -65,7 +65,7 @@ void lv_example_gridnav_3(void)
                       "Hello world!\n"
                       "Hello world!");
 
-    /*Create a third container that can be focused with ENTER and contains another grid nav*/
+    /*Create a third container that can be focused with ENTER and contains an other grid nav*/
     lv_obj_t * cont_sub2 = lv_obj_create(cont_main);
     lv_gridnav_add(cont_sub2, LV_GRIDNAV_CTRL_ROLLOVER);
     /*Only the container needs to be in a group*/

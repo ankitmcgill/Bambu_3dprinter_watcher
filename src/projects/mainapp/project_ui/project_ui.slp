@@ -1,0 +1,12 @@
+{
+    "uiExportFolderPath": "/Volumes/external_hdd/dev/bambu_3dprinter_watcher/src/projects/mainapp/project_ui/project_ui_export",
+    "projectExportFolderPath": "/Volumes/external_hdd/dev/bambu_3dprinter_watcher/src/projects/mainapp/project_ui",
+    "drive_stdio": "-",
+    "drive_stdio_path": "",
+    "drive_posix": "-",
+    "drive_posix_path": "",
+    "drive_win32": "-",
+    "drive_win32_path": "",
+    "drive_fatfs": "-",
+    "drive_fatfs_path": ""
+}

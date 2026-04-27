@@ -6,10 +6,7 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "../misc/lv_event_private.h"
-#include "lv_obj_event_private.h"
-#include "lv_obj_class_private.h"
-#include "lv_obj_private.h"
+#include "lv_obj.h"
 #include "../indev/lv_indev.h"
 #include "../indev/lv_indev_private.h"
 
@@ -27,7 +24,6 @@
  **********************/
 static lv_result_t event_send_core(lv_event_t * e);
 static bool event_is_bubbled(lv_event_t * e);
-static bool event_is_trickled(lv_event_t * e);
 
 /**********************
  *  STATIC VARIABLES
@@ -61,15 +57,14 @@ lv_result_t lv_obj_send_event(lv_obj_t * obj, lv_event_code_t event_code, void *
     e.deleted = 0;
     e.stop_bubbling = 0;
     e.stop_processing = 0;
-    e.stop_trickling = 0;
 
-    lv_event_push(&e);
+    _lv_event_push(&e);
 
     /*Send the event*/
     lv_result_t res = event_send_core(&e);
 
     /*Remove this element from the list*/
-    lv_event_pop(&e);
+    _lv_event_pop(&e);
 
     return res;
 }
@@ -88,9 +83,7 @@ lv_result_t lv_obj_event_base(const lv_obj_class_t * class_p, lv_event_t * e)
 
     /*Call the actual event callback*/
     e->user_data = NULL;
-    LV_PROFILER_EVENT_BEGIN_TAG(lv_event_code_get_name(e->code));
     base->event_cb(base, e);
-    LV_PROFILER_EVENT_END_TAG(lv_event_code_get_name(e->code));
 
     lv_result_t res = LV_RESULT_OK;
     /*Stop if the object is deleted*/
@@ -128,33 +121,29 @@ bool lv_obj_remove_event(lv_obj_t * obj, uint32_t index)
     return lv_event_remove(&obj->spec_attr->event_list, index);
 }
 
+bool lv_obj_remove_event_cb(lv_obj_t * obj, lv_event_cb_t event_cb)
+{
+    LV_ASSERT_NULL(obj);
+
+    uint32_t event_cnt = lv_obj_get_event_count(obj);
+    uint32_t i;
+    for(i = 0; i < event_cnt; i++) {
+        lv_event_dsc_t * dsc = lv_obj_get_event_dsc(obj, i);
+        if(dsc->cb == event_cb) {
+            lv_obj_remove_event(obj, i);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool lv_obj_remove_event_dsc(lv_obj_t * obj, lv_event_dsc_t * dsc)
 {
     LV_ASSERT_NULL(obj);
     LV_ASSERT_NULL(dsc);
     if(obj->spec_attr == NULL) return false;
     return lv_event_remove_dsc(&obj->spec_attr->event_list, dsc);
-}
-
-uint32_t lv_obj_remove_event_cb(lv_obj_t * obj, lv_event_cb_t event_cb)
-{
-    LV_ASSERT_NULL(obj);
-
-    uint32_t event_cnt = lv_obj_get_event_count(obj);
-    uint32_t removed_count = 0;
-    int32_t i;
-
-    if(event_cnt == 0) return 0;
-
-    for(i = event_cnt - 1; i >= 0; i--) {
-        lv_event_dsc_t * dsc = lv_obj_get_event_dsc(obj, i);
-        if(dsc && dsc->cb == event_cb) {
-            lv_obj_remove_event(obj, i);
-            removed_count++;
-        }
-    }
-
-    return removed_count;
 }
 
 uint32_t lv_obj_remove_event_cb_with_user_data(lv_obj_t * obj, lv_event_cb_t event_cb, void * user_data)
@@ -165,11 +154,9 @@ uint32_t lv_obj_remove_event_cb_with_user_data(lv_obj_t * obj, lv_event_cb_t eve
     uint32_t removed_count = 0;
     int32_t i;
 
-    if(event_cnt == 0) return 0;
-
     for(i = event_cnt - 1; i >= 0; i--) {
         lv_event_dsc_t * dsc = lv_obj_get_event_dsc(obj, i);
-        if(dsc && (event_cb == NULL || dsc->cb == event_cb) && dsc->user_data == user_data) {
+        if(dsc && dsc->cb == event_cb && dsc->user_data == user_data) {
             lv_obj_remove_event(obj, i);
             removed_count ++;
         }
@@ -206,9 +193,7 @@ lv_indev_t * lv_event_get_indev(lv_event_t * e)
        e->code == LV_EVENT_KEY ||
        e->code == LV_EVENT_FOCUSED ||
        e->code == LV_EVENT_DEFOCUSED ||
-       e->code == LV_EVENT_LEAVE ||
-       e->code == LV_EVENT_HOVER_OVER ||
-       e->code == LV_EVENT_HOVER_LEAVE) {
+       e->code == LV_EVENT_LEAVE) {
         return lv_event_get_param(e);
     }
     else {
@@ -346,18 +331,7 @@ lv_draw_task_t * lv_event_get_draw_task(lv_event_t * e)
         LV_LOG_WARN("Not interpreted with this event code");
         return NULL;
     }
-}
 
-lv_state_t lv_event_get_prev_state(lv_event_t * e)
-{
-    if(e->code == LV_EVENT_STATE_CHANGED) {
-        lv_state_t * state = lv_event_get_param(e);
-        return state ? *state : 0;
-    }
-    else {
-        LV_LOG_WARN("Not interpreted with this event code");
-        return 0;
-    }
 }
 
 /**********************
@@ -368,6 +342,7 @@ static lv_result_t event_send_core(lv_event_t * e)
 {
     LV_TRACE_EVENT("Sending event %d to %p with %p param", e->code, (void *)e->original_target, e->param);
 
+    /*Call the input device's feedback callback if set*/
     lv_indev_t * indev_act = lv_indev_active();
     if(indev_act) {
         if(e->stop_processing) return LV_RESULT_OK;
@@ -379,39 +354,19 @@ static lv_result_t event_send_core(lv_event_t * e)
     lv_event_list_t * list = target->spec_attr ?  &target->spec_attr->event_list : NULL;
 
     res = lv_event_send(list, e, true);
-    if(res != LV_RESULT_OK || e->stop_processing) return res;
+    if(res != LV_RESULT_OK) return res;
 
     res = lv_obj_event_base(NULL, e);
-    if(res != LV_RESULT_OK || e->stop_processing) return res;
+    if(res != LV_RESULT_OK) return res;
 
     res = lv_event_send(list, e, false);
-    if(res != LV_RESULT_OK || e->stop_processing) return res;
+    if(res != LV_RESULT_OK) return res;
 
     lv_obj_t * parent = lv_obj_get_parent(e->current_target);
     if(parent && event_is_bubbled(e)) {
         e->current_target = parent;
         res = event_send_core(e);
-    }
-    if(res != LV_RESULT_OK) return res;
-
-    /*Trickle down to children if enabled*/
-    if(event_is_trickled(e)) {
-        uint32_t child_count = lv_obj_get_child_count(target);
-
-        /* we don't want the event to bubble up again when trickling down */
-        e->stop_bubbling = 1;
-
-        for(uint32_t i = 0; i < child_count && res == LV_RESULT_OK && !e->stop_processing; i++) {
-            lv_obj_t * child = lv_obj_get_child(target, i);
-            if(child) {
-                e->current_target = child;
-                res = event_send_core(e);
-                if(res != LV_RESULT_OK) {
-                    LV_LOG_WARN("Trickle down event %d to child %p failed", e->code, (void *)child);
-                    break;
-                }
-            }
-        }
+        if(res != LV_RESULT_OK) return res;
     }
 
     return res;
@@ -432,38 +387,6 @@ static bool event_is_bubbled(lv_event_t * e)
 
     /*Check other codes only if bubbling is enabled*/
     if(lv_obj_has_flag(e->current_target, LV_OBJ_FLAG_EVENT_BUBBLE) == false) return false;
-
-    switch(e->code) {
-        case LV_EVENT_HIT_TEST:
-        case LV_EVENT_COVER_CHECK:
-        case LV_EVENT_REFR_EXT_DRAW_SIZE:
-        case LV_EVENT_DRAW_MAIN_BEGIN:
-        case LV_EVENT_DRAW_MAIN:
-        case LV_EVENT_DRAW_MAIN_END:
-        case LV_EVENT_DRAW_POST_BEGIN:
-        case LV_EVENT_DRAW_POST:
-        case LV_EVENT_DRAW_POST_END:
-        case LV_EVENT_DRAW_TASK_ADDED:
-        case LV_EVENT_REFRESH:
-        case LV_EVENT_DELETE:
-        case LV_EVENT_CHILD_CREATED:
-        case LV_EVENT_CHILD_DELETED:
-        case LV_EVENT_CHILD_CHANGED:
-        case LV_EVENT_SIZE_CHANGED:
-        case LV_EVENT_STYLE_CHANGED:
-        case LV_EVENT_GET_SELF_SIZE:
-            return false;
-        default:
-            return true;
-    }
-}
-
-static bool event_is_trickled(lv_event_t * e)
-{
-    if(e->stop_trickling) return false;
-
-    /*Check other codes only if trickle is enabled*/
-    if(lv_obj_has_flag(e->current_target, LV_OBJ_FLAG_EVENT_TRICKLE) == false) return false;
 
     switch(e->code) {
         case LV_EVENT_HIT_TEST:

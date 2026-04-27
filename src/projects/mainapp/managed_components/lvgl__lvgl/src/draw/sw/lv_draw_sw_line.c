@@ -6,17 +6,12 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "../../misc/lv_area_private.h"
-#include "lv_draw_sw_mask_private.h"
-#include "blend/lv_draw_sw_blend_private.h"
-#include "../lv_draw_private.h"
+#include <stdbool.h>
 #include "lv_draw_sw.h"
-
 #if LV_USE_DRAW_SW
 
 #include "../../misc/lv_math.h"
-#include "../../misc/lv_types.h"
-#include "../../core/lv_refr_private.h"
+#include "../../core/lv_refr.h"
 #include "../../stdlib/lv_string.h"
 
 /*********************
@@ -31,9 +26,9 @@
  *  STATIC PROTOTYPES
  **********************/
 
-static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_skew(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc);
-static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_hor(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc);
-static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_ver(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc);
+static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_skew(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc);
+static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_hor(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc);
+static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_ver(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc);
 
 /**********************
  *  STATIC VARIABLES
@@ -47,7 +42,7 @@ static void /* LV_ATTRIBUTE_FAST_MEM */ draw_line_ver(lv_draw_task_t * t, const 
  *   GLOBAL FUNCTIONS
  **********************/
 
-void lv_draw_sw_line(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
+void lv_draw_sw_line(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc)
 {
     if(dsc->width == 0) return;
     if(dsc->opa <= LV_OPA_MIN) return;
@@ -61,13 +56,13 @@ void lv_draw_sw_line(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
     clip_line.y2 = (int32_t)LV_MAX(dsc->p1.y, dsc->p2.y) + dsc->width / 2;
 
     bool is_common;
-    is_common = lv_area_intersect(&clip_line, &clip_line, &t->clip_area);
+    is_common = _lv_area_intersect(&clip_line, &clip_line, draw_unit->clip_area);
     if(!is_common) return;
 
-    LV_PROFILER_DRAW_BEGIN;
-    if((int32_t)dsc->p1.y == (int32_t)dsc->p2.y) draw_line_hor(t, dsc);
-    else if((int32_t)dsc->p1.x == (int32_t)dsc->p2.x) draw_line_ver(t, dsc);
-    else draw_line_skew(t, dsc);
+    LV_PROFILER_BEGIN;
+    if(dsc->p1.y == dsc->p2.y) draw_line_hor(draw_unit, dsc);
+    else if(dsc->p1.x == dsc->p2.x) draw_line_ver(draw_unit, dsc);
+    else draw_line_skew(draw_unit, dsc);
 
     if(dsc->round_end || dsc->round_start) {
         lv_draw_fill_dsc_t cir_dsc;
@@ -85,7 +80,7 @@ void lv_draw_sw_line(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
             cir_area.y1 = (int32_t)dsc->p1.y - r;
             cir_area.x2 = (int32_t)dsc->p1.x + r - r_corr;
             cir_area.y2 = (int32_t)dsc->p1.y + r - r_corr ;
-            lv_draw_sw_fill(t, &cir_dsc, &cir_area);
+            lv_draw_sw_fill(draw_unit, &cir_dsc, &cir_area);
         }
 
         if(dsc->round_end) {
@@ -93,16 +88,16 @@ void lv_draw_sw_line(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
             cir_area.y1 = (int32_t)dsc->p2.y - r;
             cir_area.x2 = (int32_t)dsc->p2.x + r - r_corr;
             cir_area.y2 = (int32_t)dsc->p2.y + r - r_corr ;
-            lv_draw_sw_fill(t, &cir_dsc, &cir_area);
+            lv_draw_sw_fill(draw_unit, &cir_dsc, &cir_area);
         }
     }
-    LV_PROFILER_DRAW_END;
+    LV_PROFILER_END;
 }
 
 /**********************
  *   STATIC FUNCTIONS
  **********************/
-static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
+static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc)
 {
     int32_t w = dsc->width - 1;
     int32_t w_half0 = w >> 1;
@@ -115,7 +110,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_task_t * t, const lv_dra
     blend_area.y2 = (int32_t)dsc->p1.y + w_half0;
 
     bool is_common;
-    is_common = lv_area_intersect(&blend_area, &blend_area, &t->clip_area);
+    is_common = _lv_area_intersect(&blend_area, &blend_area, draw_unit->clip_area);
     if(!is_common) return;
 
     bool dashed = dsc->dash_gap && dsc->dash_width;
@@ -128,7 +123,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_task_t * t, const lv_dra
 
     /*If there is no mask then simply draw a rectangle*/
     if(!dashed) {
-        lv_draw_sw_blend(t, &blend_dsc);
+        lv_draw_sw_blend(draw_unit, &blend_dsc);
     }
 #if LV_DRAW_SW_COMPLEX
     /*If there other mask apply it*/
@@ -151,25 +146,23 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_task_t * t, const lv_dra
 
             int32_t dash_cnt = dash_start;
             int32_t i;
-            for(i = 0; i < blend_area_w;) {
-                if(dash_cnt < dsc->dash_width) {
+            for(i = 0; i < blend_area_w; i++, dash_cnt++) {
+                if(dash_cnt <= dsc->dash_width) {
                     int16_t diff = dsc->dash_width - dash_cnt;
                     i += diff;
                     dash_cnt += diff;
                 }
+                else if(dash_cnt > dsc->dash_gap + dsc->dash_width) {
+                    dash_cnt = 0;
+                }
                 else {
                     mask_buf[i] = 0x00;
-                    i++;
-                    dash_cnt++;
-                }
-                if(dash_cnt >= dsc->dash_gap + dsc->dash_width) {
-                    dash_cnt = 0;
                 }
 
                 blend_dsc.mask_res = LV_DRAW_SW_MASK_RES_CHANGED;
             }
 
-            lv_draw_sw_blend(t, &blend_dsc);
+            lv_draw_sw_blend(draw_unit, &blend_dsc);
 
             blend_area.y1++;
             blend_area.y2++;
@@ -179,7 +172,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_hor(lv_draw_task_t * t, const lv_dra
 #endif /*LV_DRAW_SW_COMPLEX*/
 }
 
-static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
+static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc)
 {
     int32_t w = dsc->width - 1;
     int32_t w_half0 = w >> 1;
@@ -192,7 +185,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_task_t * t, const lv_dra
     blend_area.y2 = (int32_t)LV_MAX(dsc->p1.y, dsc->p2.y) - 1;
 
     bool is_common;
-    is_common = lv_area_intersect(&blend_area, &blend_area, &t->clip_area);
+    is_common = _lv_area_intersect(&blend_area, &blend_area, draw_unit->clip_area);
     if(!is_common) return;
 
     bool dashed = dsc->dash_gap && dsc->dash_width;
@@ -205,7 +198,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_task_t * t, const lv_dra
 
     /*If there is no mask then simply draw a rectangle*/
     if(!dashed) {
-        lv_draw_sw_blend(t, &blend_dsc);
+        lv_draw_sw_blend(draw_unit, &blend_dsc);
     }
 
 #if LV_DRAW_SW_COMPLEX
@@ -240,7 +233,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_task_t * t, const lv_dra
             }
             dash_cnt ++;
 
-            lv_draw_sw_blend(t, &blend_dsc);
+            lv_draw_sw_blend(draw_unit, &blend_dsc);
 
             blend_area.y1++;
             blend_area.y2++;
@@ -250,7 +243,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_ver(lv_draw_task_t * t, const lv_dra
 #endif /*LV_DRAW_SW_COMPLEX*/
 }
 
-static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_draw_line_dsc_t * dsc)
+static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_unit_t * draw_unit, const lv_draw_line_dsc_t * dsc)
 {
 #if LV_DRAW_SW_COMPLEX
     /*Keep the great y in p1*/
@@ -295,7 +288,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_dr
     /*Get the union of `coords` and `clip`*/
     /*`clip` is already truncated to the `draw_buf` size
      *in 'lv_refr_area' function*/
-    bool is_common = lv_area_intersect(&blend_area, &blend_area, &t->clip_area);
+    bool is_common = _lv_area_intersect(&blend_area, &blend_area, draw_unit->clip_area);
     if(is_common == false) return;
 
     lv_draw_sw_mask_line_param_t mask_left_param;
@@ -338,16 +331,16 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_dr
         masks[3] = &mask_bottom_param;
     }
 
-
-    /*Draw the background line by line*/
-    int32_t h;
-    size_t mask_buf_size = LV_MIN((int32_t)lv_area_get_size(&blend_area), lv_area_get_width(&blend_area));
-    lv_opa_t * mask_buf = lv_malloc(mask_buf_size);
-
     /*The real draw area is around the line.
      *It's easy to calculate with steep lines, but the area can be very wide with very flat lines.
      *So deal with it only with steep lines.*/
-    size_t draw_area_w = LV_MIN((size_t)lv_area_get_width(&blend_area), mask_buf_size);
+    int32_t draw_area_w = lv_area_get_width(&blend_area);
+
+    /*Draw the background line by line*/
+    int32_t h;
+    uint32_t hor_res = (uint32_t)lv_display_get_horizontal_resolution(_lv_refr_get_disp_refreshing());
+    size_t mask_buf_size = LV_MIN(lv_area_get_size(&blend_area), hor_res);
+    lv_opa_t * mask_buf = lv_malloc(mask_buf_size);
 
     int32_t y2 = blend_area.y2;
     blend_area.y2 = blend_area.y1;
@@ -376,7 +369,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_dr
         }
         else {
             blend_dsc.mask_res = LV_DRAW_SW_MASK_RES_CHANGED;
-            lv_draw_sw_blend(t, &blend_dsc);
+            lv_draw_sw_blend(draw_unit, &blend_dsc);
 
             blend_area.y1 = blend_area.y2 + 1;
             blend_area.y2 = blend_area.y1;
@@ -389,7 +382,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_dr
     if(blend_area.y1 != blend_area.y2) {
         blend_area.y2--;
         blend_dsc.mask_res = LV_DRAW_SW_MASK_RES_CHANGED;
-        lv_draw_sw_blend(t, &blend_dsc);
+        lv_draw_sw_blend(draw_unit, &blend_dsc);
     }
 
     lv_free(mask_buf);
@@ -401,7 +394,7 @@ static void LV_ATTRIBUTE_FAST_MEM draw_line_skew(lv_draw_task_t * t, const lv_dr
         lv_draw_sw_mask_free_param(&mask_bottom_param);
     }
 #else
-    LV_UNUSED(t);
+    LV_UNUSED(draw_unit);
     LV_UNUSED(dsc);
     LV_LOG_WARN("Can't draw skewed line with LV_DRAW_SW_COMPLEX == 0");
 #endif /*LV_DRAW_SW_COMPLEX*/

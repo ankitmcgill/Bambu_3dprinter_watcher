@@ -12,9 +12,7 @@
 
 #include "lv_demo_music_main.h"
 #include "lv_demo_music_list.h"
-#if LV_DEMO_MUSIC_AUTO_PLAY && LV_USE_PERF_MONITOR
-    #include "../../lvgl_private.h"
-#endif
+#include "../../src/core/lv_global.h"
 
 /*********************
  *      DEFINES
@@ -36,7 +34,6 @@
  **********************/
 static lv_obj_t * ctrl;
 static lv_obj_t * list;
-static uint32_t music_height;
 
 static const char * title_list[] = {
     "Waiting for true love",
@@ -107,6 +104,10 @@ static const uint32_t time_list[] = {
     2 * 60 + 19,
 };
 
+#if LV_USE_PERF_MONITOR || LV_DEMO_MUSIC_AUTO_PLAY
+    #define sysmon_perf LV_GLOBAL_DEFAULT()->sysmon_perf
+#endif
+
 /**********************
  *      MACROS
  **********************/
@@ -117,50 +118,35 @@ static const uint32_t time_list[] = {
 
 void lv_demo_music(void)
 {
-    lv_demo_args_t args;
-    lv_demo_args_init(&args);
-    lv_demo_music_with_args(&args);
-}
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x343247), 0);
 
-void lv_demo_music_with_args(const lv_demo_args_t * args)
-{
-    LV_ASSERT_NULL(args);
-
-    lv_obj_t * root = lv_obj_create(args->parent);
-    lv_obj_remove_style_all(root);
-    lv_obj_set_size(root, lv_pct(100), lv_pct(100));
-    lv_obj_set_style_bg_opa(root, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(root, lv_color_hex(0x343247), 0);
-    lv_obj_update_layout(root);
-
-    list = lv_demo_music_list_create(root);
-    ctrl = lv_demo_music_main_create(root);
-    music_height = lv_obj_get_height(root);
+    list = _lv_demo_music_list_create(lv_screen_active());
+    ctrl = _lv_demo_music_main_create(lv_screen_active());
 
 #if LV_DEMO_MUSIC_AUTO_PLAY
     lv_timer_create(auto_step_cb, 1000, NULL);
 #endif
 }
 
-const char * lv_demo_music_get_title(uint32_t track_id)
+const char * _lv_demo_music_get_title(uint32_t track_id)
 {
     if(track_id >= sizeof(title_list) / sizeof(title_list[0])) return NULL;
     return title_list[track_id];
 }
 
-const char * lv_demo_music_get_artist(uint32_t track_id)
+const char * _lv_demo_music_get_artist(uint32_t track_id)
 {
     if(track_id >= sizeof(artist_list) / sizeof(artist_list[0])) return NULL;
     return artist_list[track_id];
 }
 
-const char * lv_demo_music_get_genre(uint32_t track_id)
+const char * _lv_demo_music_get_genre(uint32_t track_id)
 {
     if(track_id >= sizeof(genre_list) / sizeof(genre_list[0])) return NULL;
     return genre_list[track_id];
 }
 
-uint32_t lv_demo_music_get_track_length(uint32_t track_id)
+uint32_t _lv_demo_music_get_track_length(uint32_t track_id)
 {
     if(track_id >= sizeof(time_list) / sizeof(time_list[0])) return 0;
     return time_list[track_id];
@@ -186,28 +172,28 @@ static void auto_step_cb(lv_timer_t * t)
 
     switch(state) {
         case 5:
-            lv_demo_music_album_next(true);
+            _lv_demo_music_album_next(true);
             break;
 
         case 6:
-            lv_demo_music_album_next(true);
+            _lv_demo_music_album_next(true);
             break;
         case 7:
-            lv_demo_music_album_next(true);
+            _lv_demo_music_album_next(true);
             break;
         case 8:
-            lv_demo_music_play(0);
+            _lv_demo_music_play(0);
             break;
 #if LV_DEMO_MUSIC_SQUARE || LV_DEMO_MUSIC_ROUND
         case 11:
-            lv_obj_scroll_by(ctrl, 0, -music_height, LV_ANIM_ON);
+            lv_obj_scroll_by(ctrl, 0, -LV_VER_RES, LV_ANIM_ON);
             break;
         case 13:
-            lv_obj_scroll_by(ctrl, 0, -music_height, LV_ANIM_ON);
+            lv_obj_scroll_by(ctrl, 0, -LV_VER_RES, LV_ANIM_ON);
             break;
 #else
         case 12:
-            lv_obj_scroll_by(ctrl, 0, -music_height, LV_ANIM_ON);
+            lv_obj_scroll_by(ctrl, 0, -LV_VER_RES, LV_ANIM_ON);
             break;
 #endif
         case 15:
@@ -217,18 +203,18 @@ static void auto_step_cb(lv_timer_t * t)
             lv_obj_scroll_by(list, 0, 300, LV_ANIM_ON);
             break;
         case 18:
-            lv_demo_music_play(1);
+            _lv_demo_music_play(1);
             break;
         case 19:
-            lv_obj_scroll_by(ctrl, 0, music_height, LV_ANIM_ON);
+            lv_obj_scroll_by(ctrl, 0, LV_VER_RES, LV_ANIM_ON);
             break;
 #if LV_DEMO_MUSIC_SQUARE || LV_DEMO_MUSIC_ROUND
         case 20:
-            lv_obj_scroll_by(ctrl, 0, music_height, LV_ANIM_ON);
+            lv_obj_scroll_by(ctrl, 0, LV_VER_RES, LV_ANIM_ON);
             break;
 #endif
         case 30:
-            lv_demo_music_play(2);
+            _lv_demo_music_play(2);
             break;
         case 40: {
                 lv_obj_t * bg = lv_layer_top();
@@ -244,8 +230,7 @@ static void auto_step_cb(lv_timer_t * t)
                 lv_obj_t * num = lv_label_create(bg);
                 lv_obj_set_style_text_font(num, font_large, 0);
 #if LV_USE_PERF_MONITOR
-                lv_display_t * disp = lv_display_get_default();
-                const lv_sysmon_perf_info_t * info = lv_subject_get_pointer(&disp->perf_sysmon_backend.subject);
+                const lv_sysmon_perf_info_t * info = lv_subject_get_pointer(&sysmon_perf.subject);
                 lv_label_set_text_fmt(num, "%" LV_PRIu32, info->calculated.fps_avg_total);
 #endif
                 lv_obj_align(num, LV_ALIGN_TOP_MID, 0, 120);
@@ -263,7 +248,7 @@ static void auto_step_cb(lv_timer_t * t)
             }
         case 41:
             lv_screen_load(lv_obj_create(NULL));
-            lv_demo_music_pause();
+            _lv_demo_music_pause();
             break;
     }
     state++;

@@ -1,0 +1,16 @@
+idf_component_register(SRCS 
+                            ui_Screen1.c
+                            ui_Screen2.c
+                            ui.c
+                            ui_comp_hook.c
+                            ui_helpers.c
+                            ui_img_icon_heat_png.c
+                            ui_img_icon_nozzle_png.c
+                            ui_img_icon_percent_png.c
+                            ui_img_icon_layers_png.c
+                            ui_img_icon_clock_png.c
+                            ui_img_icon_printer_png.c
+                            ui_img_icon_3dprinter_png.c
+                        PRIV_REQUIRES
+                            lvgl__lvgl
+)

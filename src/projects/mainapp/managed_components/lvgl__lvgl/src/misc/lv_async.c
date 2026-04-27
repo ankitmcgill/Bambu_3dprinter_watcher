@@ -8,7 +8,7 @@
  *********************/
 
 #include "lv_async.h"
-#include "lv_timer_private.h"
+#include "lv_timer.h"
 #include "../stdlib/lv_mem.h"
 
 /*********************

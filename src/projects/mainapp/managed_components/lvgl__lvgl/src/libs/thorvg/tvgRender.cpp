@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,49 +35,40 @@
 /* External Class Implementation                                        */
 /************************************************************************/
 
-uint32_t RenderMethod::ref()
+void RenderTransform::override(const Matrix& m)
 {
-    ScopedLock lock(key);
-    return (++refCnt);
+    this->m = m;
+    overriding = true;
 }
 
 
-uint32_t RenderMethod::unref()
+bool RenderTransform::update()
 {
-    ScopedLock lock(key);
-    return (--refCnt);
+    if (overriding) return true;
+
+    //Init Status
+    if (mathZero(x) && mathZero(y) && mathZero(degree) && mathEqual(scale, 1)) return false;
+
+    mathIdentity(&m);
+
+    mathScale(&m, scale, scale);
+
+    if (!mathZero(degree)) mathRotate(&m, degree);
+
+    mathTranslate(&m, x, y);
+
+    return true;
 }
 
 
-void RenderRegion::intersect(const RenderRegion& rhs)
+RenderTransform::RenderTransform()
 {
-    auto x1 = x + w;
-    auto y1 = y + h;
-    auto x2 = rhs.x + rhs.w;
-    auto y2 = rhs.y + rhs.h;
-
-    x = (x > rhs.x) ? x : rhs.x;
-    y = (y > rhs.y) ? y : rhs.y;
-    w = ((x1 < x2) ? x1 : x2) - x;
-    h = ((y1 < y2) ? y1 : y2) - y;
-
-    if (w < 0) w = 0;
-    if (h < 0) h = 0;
 }
 
 
-void RenderRegion::add(const RenderRegion& rhs)
+RenderTransform::RenderTransform(const RenderTransform* lhs, const RenderTransform* rhs)
 {
-    if (rhs.x < x) {
-        w += (x - rhs.x);
-        x = rhs.x;
-    }
-    if (rhs.y < y) {
-        h += (y - rhs.y);
-        y = rhs.y;
-    }
-    if (rhs.x + rhs.w > x + w) w = (rhs.x + rhs.w) - x;
-    if (rhs.y + rhs.h > y + h) h = (rhs.y + rhs.h) - y;
+    m = mathMultiply(&lhs->m, &rhs->m);
 }
 
 #endif /* LV_USE_THORVG_INTERNAL */

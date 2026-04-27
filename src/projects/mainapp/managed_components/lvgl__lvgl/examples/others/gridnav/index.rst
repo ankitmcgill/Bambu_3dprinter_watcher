@@ -1,5 +1,3 @@
-.. example_heading: Grid Navigation
-
 
 Basic grid navigation
 ---------------------
@@ -23,10 +21,4 @@ Simple navigation on a list widget
 ----------------------------------
 
 .. lv_example:: others/gridnav/lv_example_gridnav_4
-  :language: c
-
-Grid navigation for only one axis
----------------------------------
-
-.. lv_example:: others/gridnav/lv_example_gridnav_5
   :language: c

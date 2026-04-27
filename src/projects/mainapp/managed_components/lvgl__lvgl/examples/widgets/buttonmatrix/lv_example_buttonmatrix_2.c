@@ -3,9 +3,9 @@
 
 static void event_cb(lv_event_t * e)
 {
-    lv_obj_t * obj = lv_event_get_target_obj(e);
+    lv_obj_t * obj = lv_event_get_target(e);
     lv_draw_task_t * draw_task = lv_event_get_draw_task(e);
-    lv_draw_dsc_base_t * base_dsc = (lv_draw_dsc_base_t *)lv_draw_task_get_draw_dsc(draw_task);
+    lv_draw_dsc_base_t * base_dsc = draw_task->draw_dsc;
     /*When the button matrix draws the buttons...*/
     if(base_dsc->part == LV_PART_ITEMS) {
         bool pressed = false;
@@ -41,18 +41,13 @@ static void event_cb(lv_event_t * e)
                 if(pressed) fill_draw_dsc->color = lv_palette_darken(LV_PALETTE_RED, 3);
                 else fill_draw_dsc->color = lv_palette_main(LV_PALETTE_RED);
             }
-
-            lv_draw_box_shadow_dsc_t * box_shadow_draw_dsc = lv_draw_task_get_box_shadow_dsc(draw_task);
-            if(box_shadow_draw_dsc) {
-                box_shadow_draw_dsc->radius = LV_RADIUS_CIRCLE;
-            }
         }
         else if(base_dsc->id1 == 3) {
             lv_draw_label_dsc_t * label_draw_dsc = lv_draw_task_get_label_dsc(draw_task);
             if(label_draw_dsc) {
                 label_draw_dsc->opa = 0;
             }
-            if(lv_draw_task_get_type(draw_task) == LV_DRAW_TASK_TYPE_FILL) {
+            if(draw_task->type == LV_DRAW_TASK_TYPE_FILL) {
                 LV_IMAGE_DECLARE(img_star);
                 lv_image_header_t header;
                 lv_result_t res = lv_image_decoder_get_info(&img_star, &header);
@@ -63,9 +58,7 @@ static void event_cb(lv_event_t * e)
                 a.x2 = header.w - 1;
                 a.y1 = 0;
                 a.y2 = header.h - 1;
-                lv_area_t draw_task_area;
-                lv_draw_task_get_area(draw_task, &draw_task_area);
-                lv_area_align(&draw_task_area, &a, LV_ALIGN_CENTER, 0, 0);
+                lv_area_align(&draw_task->area, &a, LV_ALIGN_CENTER, 0, 0);
 
                 lv_draw_image_dsc_t img_draw_dsc;
                 lv_draw_image_dsc_init(&img_draw_dsc);

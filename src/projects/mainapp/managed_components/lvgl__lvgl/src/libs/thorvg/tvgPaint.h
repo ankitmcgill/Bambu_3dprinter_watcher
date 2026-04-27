@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,19 @@ namespace tvg
         virtual void begin() = 0;
     };
 
+    struct StrategyMethod
+    {
+        virtual ~StrategyMethod() {}
+
+        virtual bool dispose(RenderMethod& renderer) = 0;     //return true if the deletion is allowed.
+        virtual void* update(RenderMethod& renderer, const RenderTransform* transform, Array<RenderData>& clips, uint8_t opacity, RenderUpdateFlag pFlag, bool clipper) = 0;   //Return engine data if it has.
+        virtual bool render(RenderMethod& renderer) = 0;
+        virtual bool bounds(float* x, float* y, float* w, float* h, bool stroking) = 0;
+        virtual RenderRegion bounds(RenderMethod& renderer) const = 0;
+        virtual Paint* duplicate() = 0;
+        virtual Iterator* iterator() = 0;
+    };
+
     struct Composite
     {
         Paint* target;
@@ -50,93 +63,79 @@ namespace tvg
 
     struct Paint::Impl
     {
-        Paint* paint = nullptr;
+        StrategyMethod* smethod = nullptr;
+        RenderTransform* rTransform = nullptr;
         Composite* compData = nullptr;
-        Paint* clipper = nullptr;
-        RenderMethod* renderer = nullptr;
-        struct {
-            Matrix m;                 //input matrix
-            Matrix cm;                //multipled parents matrix
-            float degree;             //rotation degree
-            float scale;              //scale factor
-            bool overriding;          //user transform?
-
-            void update()
-            {
-                if (overriding) return;
-                m.e11 = 1.0f;
-                m.e12 = 0.0f;
-                m.e21 = 0.0f;
-                m.e22 = 1.0f;
-                m.e31 = 0.0f;
-                m.e32 = 0.0f;
-                m.e33 = 1.0f;
-                tvg::scale(&m, scale, scale);
-                tvg::rotate(&m, degree);
-            }
-        } tr;
-        BlendMethod blendMethod;
-        uint8_t renderFlag;
-        uint8_t ctxFlag;
-        uint8_t opacity;
-        uint8_t refCnt = 0;                              //reference count
-
-        Impl(Paint* pnt) : paint(pnt)
-        {
-            reset();
-        }
+        BlendMethod blendMethod = BlendMethod::Normal;              //uint8_t
+        uint8_t renderFlag = RenderUpdateFlag::None;
+        uint8_t ctxFlag = ContextFlag::Invalid;
+        uint8_t id;
+        uint8_t opacity = 255;
+        uint8_t refCnt = 0;
 
         ~Impl()
         {
             if (compData) {
-                if (P(compData->target)->unref() == 0) delete(compData->target);
-                lv_free(compData);
+                delete(compData->target);
+                free(compData);
             }
-            if (clipper && P(clipper)->unref() == 0) delete(clipper);
-            if (renderer && (renderer->unref() == 0)) delete(renderer);
+            delete(smethod);
+            delete(rTransform);
         }
 
         uint8_t ref()
         {
             if (refCnt == 255) TVGERR("RENDERER", "Corrupted reference count!");
-            return ++refCnt;
+            return (++refCnt);
         }
 
         uint8_t unref()
         {
             if (refCnt == 0) TVGERR("RENDERER", "Corrupted reference count!");
-            return --refCnt;
+            return (--refCnt);
+        }
+
+        void method(StrategyMethod* method)
+        {
+            smethod = method;
         }
 
         bool transform(const Matrix& m)
         {
-            if (&tr.m != &m) tr.m = m;
-            tr.overriding = true;
+            if (!rTransform) {
+                if (mathIdentity(&m)) return true;
+                rTransform = new RenderTransform();
+                if (!rTransform) return false;
+            }
+            rTransform->override(m);
             renderFlag |= RenderUpdateFlag::Transform;
 
             return true;
         }
 
-        Matrix& transform(bool origin = false)
+        Matrix* transform()
         {
-            //update transform
-            if (renderFlag & RenderUpdateFlag::Transform) tr.update();
-            if (origin) return tr.cm;
-            return tr.m;
+            if (rTransform) {
+                rTransform->update();
+                return &rTransform->m;
+            }
+            return nullptr;
         }
 
-        void clip(Paint* clp)
+        RenderRegion bounds(RenderMethod& renderer) const
         {
-            if (this->clipper) {
-                P(this->clipper)->unref();
-                if (this->clipper != clp && P(this->clipper)->refCnt == 0) {
-                    delete(this->clipper);
-                }
-            }
-            this->clipper = clp;
-            if (!clp) return;
+            return smethod->bounds(renderer);
+        }
 
-            P(clipper)->ref();
+        bool dispose(RenderMethod& renderer)
+        {
+            if (compData) compData->target->pImpl->dispose(renderer);
+            return smethod->dispose(renderer);
+        }
+
+        Iterator* iterator()
+        {
+            return smethod->iterator();
         }
 
         bool composite(Paint* source, Paint* target, CompositeMethod method)
@@ -145,38 +144,75 @@ namespace tvg
             if ((!target && method != CompositeMethod::None) || (target && method == CompositeMethod::None)) return false;
 
             if (compData) {
-                P(compData->target)->unref();
-                if ((compData->target != target) && P(compData->target)->refCnt == 0) {
-                    delete(compData->target);
-                }
+                delete(compData->target);
                 //Reset scenario
                 if (!target && method == CompositeMethod::None) {
-                	lv_free(compData);
+                    free(compData);
                     compData = nullptr;
                     return true;
                 }
             } else {
                 if (!target && method == CompositeMethod::None) return true;
-                compData = static_cast<Composite*>(lv_zalloc(sizeof(Composite)));
-                LV_ASSERT_MALLOC(compData);
+                compData = static_cast<Composite*>(calloc(1, sizeof(Composite)));
             }
-            P(target)->ref();
             compData->target = target;
             compData->source = source;
             compData->method = method;
             return true;
         }
 
-        RenderRegion bounds(RenderMethod* renderer) const;
-        Iterator* iterator();
         bool rotate(float degree);
         bool scale(float factor);
         bool translate(float x, float y);
-        bool bounds(float* x, float* y, float* w, float* h, bool transformed, bool stroking, bool origin = false);
-        RenderData update(RenderMethod* renderer, const Matrix& pm, Array<RenderData>& clips, uint8_t opacity, RenderUpdateFlag pFlag, bool clipper = false);
-        bool render(RenderMethod* renderer);
-        Paint* duplicate(Paint* ret = nullptr);
-        void reset();
+        bool bounds(float* x, float* y, float* w, float* h, bool transformed, bool stroking);
+        RenderData update(RenderMethod& renderer, const RenderTransform* pTransform, Array<RenderData>& clips, uint8_t opacity, RenderUpdateFlag pFlag, bool clipper = false);
+        bool render(RenderMethod& renderer);
+        Paint* duplicate();
+    };
+
+
+    template<class T>
+    struct PaintMethod : StrategyMethod
+    {
+        T* inst = nullptr;
+
+        PaintMethod(T* _inst) : inst(_inst) {}
+        ~PaintMethod() {}
+
+        bool bounds(float* x, float* y, float* w, float* h, bool stroking) override
+        {
+            return inst->bounds(x, y, w, h, stroking);
+        }
+
+        RenderRegion bounds(RenderMethod& renderer) const override
+        {
+            return inst->bounds(renderer);
+        }
+
+        bool dispose(RenderMethod& renderer) override
+        {
+            return inst->dispose(renderer);
+        }
+
+        RenderData update(RenderMethod& renderer, const RenderTransform* transform, Array<RenderData>& clips, uint8_t opacity, RenderUpdateFlag renderFlag, bool clipper) override
+        {
+            return inst->update(renderer, transform, clips, opacity, renderFlag, clipper);
+        }
+
+        bool render(RenderMethod& renderer) override
+        {
+            return inst->render(renderer);
+        }
+
+        Paint* duplicate() override
+        {
+            return inst->duplicate();
+        }
+
+        Iterator* iterator() override
+        {
+            return inst->iterator();
+        }
     };
 }
 

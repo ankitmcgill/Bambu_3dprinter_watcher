@@ -15,8 +15,6 @@ extern "C" {
  *********************/
 #include "../lvgl.h"
 
-typedef struct _lv_demo_args lv_demo_args_t;
-
 #if LV_USE_DEMO_BENCHMARK
 #include "benchmark/lv_demo_benchmark.h"
 #endif
@@ -37,16 +35,28 @@ typedef struct _lv_demo_args lv_demo_args_t;
 #include "widgets/lv_demo_widgets.h"
 #endif
 
+#if LV_USE_DEMO_FLEX_LAYOUT
+#include "flex_layout/lv_demo_flex_layout.h"
+#endif
+
+#if LV_USE_DEMO_TRANSFORM
+#include "transform/lv_demo_transform.h"
+#endif
+
+#if LV_USE_DEMO_SCROLL
+#include "scroll/lv_demo_scroll.h"
+#endif
+
+#if LV_USE_DEMO_MULTILANG
+#include "multilang/lv_demo_multilang.h"
+#endif
+
 #if LV_USE_DEMO_VECTOR_GRAPHIC && LV_USE_VECTOR_GRAPHIC
 #include "vector_graphic/lv_demo_vector_graphic.h"
 #endif
 
 #if LV_USE_DEMO_RENDER
 #include "render/lv_demo_render.h"
-#endif
-
-#if LV_USE_DEMO_GLTF
-#include "gltf/lv_demo_gltf.h"
 #endif
 
 /*********************
@@ -56,19 +66,10 @@ typedef struct _lv_demo_args lv_demo_args_t;
 /**********************
  *      TYPEDEFS
  **********************/
-struct _lv_demo_args {
-    lv_obj_t * parent;
-};
 
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
-
-/**
- * Initialize the lv_demo_args_t structure with default values.
- * @param args Pointer to the lv_demo_args_t structure to be initialized.
- */
-void lv_demo_args_init(lv_demo_args_t * args);
 
 /**
  * Call lv_demo_xxx.
@@ -91,4 +92,4 @@ void lv_demos_show_help(void);
 } /* extern "C" */
 #endif
 
-#endif /*LV_DEMOS_H*/
+#endif /*LV_DEMO_H*/

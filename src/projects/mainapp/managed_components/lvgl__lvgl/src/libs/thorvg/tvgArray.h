@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,8 @@
 #ifndef _TVG_ARRAY_H_
 #define _TVG_ARRAY_H_
 
-#include "tvgCommon.h"
 #include <memory.h>
 #include <cstdint>
-#include <cstdlib>
-#include "tvgCommon.h"
 
 namespace tvg
 {
@@ -44,11 +41,6 @@ struct Array
 
     Array(){}
 
-    Array(int32_t size)
-    {
-        reserve(size);
-    }
-
     Array(const Array& rhs)
     {
         reset();
@@ -59,15 +51,13 @@ struct Array
     {
         if (count + 1 > reserved) {
             reserved = count + (count + 2) / 2;
-            data = static_cast<T*>(lv_realloc(data, sizeof(T) * reserved));
-            LV_ASSERT_MALLOC(data);
+            data = static_cast<T*>(realloc(data, sizeof(T) * reserved));
         }
         data[count++] = element;
     }
 
-    void push(const Array<T>& rhs)
+    void push(Array<T>& rhs)
     {
-        if (rhs.count == 0) return;
         grow(rhs.count);
         memcpy(data + count, rhs.data, rhs.count * sizeof(T));
         count += rhs.count;
@@ -77,8 +67,7 @@ struct Array
     {
         if (size > reserved) {
             reserved = size;
-            data = static_cast<T*>(lv_realloc(data, sizeof(T) * reserved));
-            LV_ASSERT_MALLOC(data);
+            data = static_cast<T*>(realloc(data, sizeof(T) * reserved));
         }
         return true;
     }
@@ -96,16 +85,6 @@ struct Array
     T& operator[](size_t idx)
     {
         return data[idx];
-    }
-
-    const T* begin() const
-    {
-        return data;
-    }
-
-    T* begin()
-    {
-        return data;
     }
 
     T* end()
@@ -145,7 +124,7 @@ struct Array
 
     void reset()
     {
-        lv_free(data);
+        free(data);
         data = nullptr;
         count = reserved = 0;
     }
@@ -175,7 +154,7 @@ struct Array
 
     ~Array()
     {
-        lv_free(data);
+        free(data);
     }
 
 private:

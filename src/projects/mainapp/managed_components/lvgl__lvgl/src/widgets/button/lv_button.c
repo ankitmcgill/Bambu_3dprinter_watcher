@@ -1,5 +1,5 @@
 /**
- * @file lv_button.c
+ * @file lv_btn.c
  *
  */
 
@@ -7,8 +7,7 @@
  *      INCLUDES
  *********************/
 
-#include "lv_button_private.h"
-#include "../../core/lv_obj_class_private.h"
+#include "lv_button.h"
 #if LV_USE_BUTTON != 0
 
 /*********************
@@ -35,7 +34,7 @@ const lv_obj_class_t lv_button_class  = {
     .group_def = LV_OBJ_CLASS_GROUP_DEF_TRUE,
     .instance_size = sizeof(lv_button_t),
     .base_class = &lv_obj_class,
-    .name = "lv_button",
+    .name = "btn",
 };
 
 /**********************

@@ -34,15 +34,14 @@ extern "C" {
  *      TYPEDEFS
  **********************/
 
-LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_led_class;
+/*Data of led*/
+typedef struct {
+    lv_obj_t obj;
+    lv_color_t color;
+    uint8_t bright;     /**< Current brightness of the LED (0..255)*/
+} lv_led_t;
 
-#if LV_USE_OBJ_PROPERTY
-enum _lv_property_led_id_t {
-    LV_PROPERTY_ID(LED, COLOR,      LV_PROPERTY_TYPE_COLOR, 0),
-    LV_PROPERTY_ID(LED, BRIGHTNESS, LV_PROPERTY_TYPE_INT,   1),
-    LV_PROPERTY_LED_END,
-};
-#endif
+LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_led_class;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -93,13 +92,6 @@ void lv_led_toggle(lv_obj_t * led);
  * @return bright   0 (max. dark) ... 255 (max. light)
  */
 uint8_t lv_led_get_brightness(const lv_obj_t * obj);
-
-/**
- * Get the color of a LED object
- * @param obj       pointer to LED object
- * @return color    color of the LED
- */
-lv_color_t lv_led_get_color(const lv_obj_t * obj);
 
 /**********************
  *      MACROS

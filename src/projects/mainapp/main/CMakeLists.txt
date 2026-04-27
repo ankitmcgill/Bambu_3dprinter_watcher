@@ -6,7 +6,7 @@ idf_component_register(SRCS "main.c"
                             util_dataqueue
                             defines
                             project_defines
-                            project_ui
+                            project_ui_export
                         PRIV_REQUIRES
                             spi_flash
                             nvs_flash

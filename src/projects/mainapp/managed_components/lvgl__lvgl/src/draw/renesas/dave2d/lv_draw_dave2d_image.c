@@ -9,9 +9,6 @@
 #include "lv_draw_dave2d.h"
 #if LV_USE_DRAW_DAVE2D
 
-#include "../../lv_image_decoder_private.h"
-#include "../../lv_draw_image_private.h"
-
 /*********************
  *      DEFINES
  *********************/
@@ -23,7 +20,7 @@
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_dsc,
+static void img_draw_core(lv_draw_unit_t * u_base, const lv_draw_image_dsc_t * draw_dsc,
                           const lv_image_decoder_dsc_t * decoder_dsc, lv_draw_image_sup_t * sup,
                           const lv_area_t * img_coords, const lv_area_t * clipped_img_area);
 
@@ -39,14 +36,14 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
  *   GLOBAL FUNCTIONS
  **********************/
 
-void lv_draw_dave2d_image(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_dsc,
+void lv_draw_dave2d_image(lv_draw_dave2d_unit_t * draw_unit, const lv_draw_image_dsc_t * draw_dsc,
                           const lv_area_t * coords)
 {
     if(!draw_dsc->tile) {
-        lv_draw_image_normal_helper(t, draw_dsc, coords, img_draw_core, NULL);
+        _lv_draw_image_normal_helper((lv_draw_unit_t *)draw_unit, draw_dsc, coords, img_draw_core);
     }
     else {
-        lv_draw_image_tiled_helper(t, draw_dsc, coords, img_draw_core, NULL);
+        _lv_draw_image_tiled_helper((lv_draw_unit_t *)draw_unit, draw_dsc, coords, img_draw_core);
     }
 }
 
@@ -54,12 +51,12 @@ void lv_draw_dave2d_image(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
  *   STATIC FUNCTIONS
  **********************/
 
-static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_dsc,
+static void img_draw_core(lv_draw_unit_t * u_base, const lv_draw_image_dsc_t * draw_dsc,
                           const lv_image_decoder_dsc_t * decoder_dsc, lv_draw_image_sup_t * sup,
                           const lv_area_t * img_coords, const lv_area_t * clipped_img_area)
 {
 
-    lv_draw_dave2d_unit_t * u = (lv_draw_dave2d_unit_t *)t->draw_unit;
+    lv_draw_dave2d_unit_t * u = (lv_draw_dave2d_unit_t *)u_base;
 
     (void)sup; //remove warning about unused parameter
 
@@ -83,29 +80,31 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
     d2_u8 current_fill_mode;
     d2_u32 src_blend_mode;
     d2_u32 dst_blend_mode;
-    d2_u32 src_alpha_blend_mode;
-    d2_u32 dst_alpha_blend_mode;
     void * p_intermediate_buf = NULL;
 
 #if LV_USE_OS
     lv_result_t  status;
     status = lv_mutex_lock(u->pd2Mutex);
-    LV_ASSERT(LV_RESULT_OK == status);
+    if(LV_RESULT_OK != status) {
+        __BKPT(0);
+    }
 #endif
 
-    src_alpha_blend_mode = d2_getalphablendmodesrc(u->d2_handle);
-    dst_alpha_blend_mode = d2_getalphablendmodedst(u->d2_handle);
-
-    buffer_area = t->target_layer->buf_area;
+    buffer_area = u->base_unit.target_layer->buf_area;
     draw_area = *img_coords;
     clipped_area = *clipped_img_area;
 
-    x = 0 - t->target_layer->buf_area.x1;
-    y = 0 - t->target_layer->buf_area.y1;
+    x = 0 - u->base_unit.target_layer->buf_area.x1;
+    y = 0 - u->base_unit.target_layer->buf_area.y1;
 
     lv_area_move(&draw_area, x, y);
     lv_area_move(&buffer_area, x, y);
     lv_area_move(&clipped_area, x, y);
+
+    /* Generate render operations*/
+#if D2_RENDER_EACH_OPERATION
+    d2_selectrenderbuffer(u->d2_handle, u->renderbuffer);
+#endif
 
     current_fill_mode = d2_getfillmode(u->d2_handle);
     a_texture_op      = d2_gettextureoperationa(u->d2_handle);
@@ -115,8 +114,8 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
     src_blend_mode    = d2_getblendmodesrc(u->d2_handle);
     dst_blend_mode    = d2_getblendmodedst(u->d2_handle);
 
-#if defined(RENESAS_CORTEX_M85) || defined(_RENESAS_RZA_)
-#if (BSP_CFG_DCACHE_ENABLED) || defined(_RENESAS_RZA_)
+#if defined(RENESAS_CORTEX_M85)
+#if (BSP_CFG_DCACHE_ENABLED)
     d1_cacheblockflush(u->d2_handle, 0, src_buf,
                        img_stride * header->h); //Stride is in bytes, not pixels/texels
 #endif
@@ -203,7 +202,7 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
 
     }
 
-    d2_framebuffer_from_layer(u->d2_handle, t->target_layer);
+    d2_framebuffer_from_layer(u->d2_handle, u->base_unit.target_layer);
 
     d2_cliprect(u->d2_handle, (d2_border)clipped_area.x1, (d2_border)clipped_area.y1, (d2_border)clipped_area.x2,
                 (d2_border)clipped_area.y2);
@@ -214,7 +213,7 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
         d2_settextureoperation(u->d2_handle, d2_to_replace, d2_to_copy, d2_to_copy, d2_to_copy);
     }
     else { //Formats with an alpha channel,
-        d2_settextureoperation(u->d2_handle, d2_to_multiply, d2_to_copy, d2_to_copy, d2_to_copy);
+        d2_settextureoperation(u->d2_handle, d2_to_copy, d2_to_copy, d2_to_copy, d2_to_copy);
     }
 
     if(LV_BLEND_MODE_NORMAL == draw_dsc->blend_mode) { /**< Simply mix according to the opacity value*/
@@ -226,9 +225,11 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
     }
     else if(LV_BLEND_MODE_SUBTRACTIVE == draw_dsc->blend_mode) { /**< Subtract the foreground from the background*/
         /* TODO */
+        __NOP();
     }
     else { //LV_BLEND_MODE_MULTIPLY,   /**< Multiply the foreground and background*/
         /* TODO */
+        __NOP();
     }
 
     lv_point_t p[4] = { //Points in clockwise order
@@ -302,10 +303,17 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
                   (d2_point)D2_FIX4(p[3].y),
                   0);
 
+    //
+    // Execute render operations
+    //
+#if D2_RENDER_EACH_OPERATION
+    d2_executerenderbuffer(u->d2_handle, u->renderbuffer, 0);
+    d2_flushframe(u->d2_handle);
+#endif
+
     d2_setfillmode(u->d2_handle, current_fill_mode);
     d2_settextureoperation(u->d2_handle, a_texture_op, r_texture_op, g_texture_op, b_texture_op);
     d2_setblendmode(u->d2_handle, src_blend_mode, dst_blend_mode);
-    d2_setalphablendmode(u->d2_handle, src_alpha_blend_mode, dst_alpha_blend_mode);
 
     if(NULL != p_intermediate_buf) {
         lv_free(p_intermediate_buf);
@@ -313,7 +321,9 @@ static void img_draw_core(lv_draw_task_t * t, const lv_draw_image_dsc_t * draw_d
 
 #if LV_USE_OS
     status = lv_mutex_unlock(u->pd2Mutex);
-    LV_ASSERT(LV_RESULT_OK == status);
+    if(LV_RESULT_OK != status) {
+        __BKPT(0);
+    }
 #endif
 
 }

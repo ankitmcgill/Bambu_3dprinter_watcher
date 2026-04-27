@@ -1,10 +1,10 @@
 /**
- * @file lv_tick.h
+ * @file lv_hal_tick.h
  * Provide access to the system tick with 1 millisecond resolution
  */
 
-#ifndef LV_TICK_H
-#define LV_TICK_H
+#ifndef LV_HAL_TICK_H
+#define LV_HAL_TICK_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,7 +15,8 @@ extern "C" {
  *********************/
 #include "../lv_conf_internal.h"
 
-#include "../misc/lv_types.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 /*********************
  *      DEFINES
@@ -31,13 +32,19 @@ typedef uint32_t (*lv_tick_get_cb_t)(void);
 
 typedef void (*lv_delay_cb_t)(uint32_t ms);
 
+typedef struct {
+    uint32_t sys_time;
+    volatile uint8_t sys_irq_flag;
+    lv_tick_get_cb_t tick_get_cb;
+    lv_delay_cb_t delay_cb;
+} lv_tick_state_t;
+
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
 
 /**
- * You have to call this function periodically.
- * It is typically safe to call from an interrupt handler or a different thread.
+ * You have to call this function periodically
  * @param tick_period   the call period of this function in milliseconds
  */
 LV_ATTRIBUTE_TICK_INC void lv_tick_inc(uint32_t tick_period);
@@ -56,14 +63,6 @@ uint32_t lv_tick_get(void);
 uint32_t lv_tick_elaps(uint32_t prev_tick);
 
 /**
- * Get the elapsed milliseconds between two time stamps
- * @param tick          a time stamp
- * @param prev_tick     a time stamp before `tick`
- * @return              the elapsed milliseconds between `prev_tick` and `tick`
- */
-uint32_t lv_tick_diff(uint32_t tick, uint32_t prev_tick);
-
-/**
  * Delay for the given milliseconds.
  * By default it's a blocking delay, but with `lv_delay_set_cb()`
  * a custom delay function can be set too
@@ -72,22 +71,16 @@ uint32_t lv_tick_diff(uint32_t tick, uint32_t prev_tick);
 void lv_delay_ms(uint32_t ms);
 
 /**
- * Set a callback for a blocking delay
- * @param cb        pointer to a callback
- */
-void lv_delay_set_cb(lv_delay_cb_t cb);
-
-/**
  * Set the custom callback for 'lv_tick_get'
  * @param cb        call this callback on 'lv_tick_get'
  */
 void lv_tick_set_cb(lv_tick_get_cb_t cb);
 
 /**
- * Get the custom callback for 'lv_tick_get'
- * @return      call this callback on 'lv_tick_get'
+ * Set a custom callback for 'lv_dalay_ms'
+ * @param cb        call this callback in 'lv_dalay_ms'
  */
-lv_tick_get_cb_t lv_tick_get_cb(void);
+void lv_delay_set_cb(lv_delay_cb_t cb);
 
 /**********************
  *      MACROS
@@ -97,4 +90,4 @@ lv_tick_get_cb_t lv_tick_get_cb(void);
 } /*extern "C"*/
 #endif
 
-#endif /*LV_TICK_H*/
+#endif /*LV_HAL_TICK_H*/

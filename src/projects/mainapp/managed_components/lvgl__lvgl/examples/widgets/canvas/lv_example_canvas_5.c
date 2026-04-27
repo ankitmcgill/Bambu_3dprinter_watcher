@@ -10,8 +10,7 @@
 void lv_example_canvas_5(void)
 {
     /*Create a buffer for the canvas*/
-    LV_DRAW_BUF_DEFINE_STATIC(draw_buf, CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_ARGB8888);
-    LV_DRAW_BUF_INIT_STATIC(draw_buf);
+    LV_DRAW_BUF_DEFINE(draw_buf, CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_ARGB8888);
 
     /*Create a canvas and initialize its palette*/
     lv_obj_t * canvas = lv_canvas_create(lv_screen_active());
@@ -25,6 +24,7 @@ void lv_example_canvas_5(void)
     lv_draw_arc_dsc_t dsc;
     lv_draw_arc_dsc_init(&dsc);
     dsc.color = lv_palette_main(LV_PALETTE_RED);
+    dsc.width = 5;
     dsc.center.x = 25;
     dsc.center.y = 25;
     dsc.width = 10;

@@ -15,7 +15,8 @@ extern "C" {
  *********************/
 
 #include "../../lv_conf_internal.h"
-#include LV_STDBOOL_INCLUDE
+
+#if LV_CACHE_DEF_SIZE > 0
 
 /*********************
  *      DEFINES
@@ -29,13 +30,13 @@ extern "C" {
  * GLOBAL PROTOTYPES
  **********************/
 
-void lv_nuttx_image_cache_init(bool use_independent_image_heap);
-
-void lv_nuttx_image_cache_deinit(void);
+void lv_nuttx_image_cache_init(void);
 
 /**********************
  *      MACROS
  **********************/
+
+#endif /*LV_CACHE_DEF_SIZE > 0*/
 
 #ifdef __cplusplus
 } /*extern "C"*/

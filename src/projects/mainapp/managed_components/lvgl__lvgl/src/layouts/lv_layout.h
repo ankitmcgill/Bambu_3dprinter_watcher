@@ -1,10 +1,10 @@
 /**
- * @file lv_layout.h
+ * @file lv_layouts.h
  *
  */
 
-#ifndef LV_LAYOUT_H
-#define LV_LAYOUT_H
+#ifndef LV_LAYOUTS_H
+#define LV_LAYOUTS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,13 +25,10 @@ extern "C" {
  **********************/
 
 typedef void (*lv_layout_update_cb_t)(lv_obj_t *, void * user_data);
-typedef bool (*lv_layout_get_min_size_cb_t)(lv_obj_t *, int32_t * req_size, bool width, void * user_data);
-
 typedef struct {
-    lv_layout_update_cb_t layout_update_cb;
-    lv_layout_get_min_size_cb_t get_min_size_cb;
-} lv_layout_callbacks_t;
-
+    lv_layout_update_cb_t cb;
+    void * user_data;
+} lv_layout_dsc_t;
 
 typedef enum {
     LV_LAYOUT_NONE = 0,
@@ -44,27 +41,30 @@ typedef enum {
     LV_LAYOUT_GRID,
 #endif
 
-    LV_LAYOUT_LAST
+    _LV_LAYOUT_LAST
 } lv_layout_t;
 
+/**********************
+ * GLOBAL PROTOTYPES
+ **********************/
+
+void _lv_layout_init(void);
+
+void _lv_layout_deinit(void);
 
 /**
- * Create a new layout
- * @param callbacks the layout callbacks
- * @param user_data custom data that will be passed when a callback is invoked
- * @return          the ID of the new layout
- */
-uint32_t lv_layout_create(lv_layout_callbacks_t callbacks, void * user_data);
-
-/**
- * DEPRECATED: `lv_layout_register` is deprecated. `lv_layout_create` should be used instead.
- *
  * Register a new layout
  * @param cb        the layout update callback
  * @param user_data custom data that will be passed to `cb`
  * @return          the ID of the new layout
  */
 uint32_t lv_layout_register(lv_layout_update_cb_t cb, void * user_data);
+
+/**
+ * Update the layout of a widget
+ * @param obj   pointer to a widget
+ */
+void _lv_layout_apply(lv_obj_t * obj);
 
 /**********************
  *      MACROS
@@ -82,4 +82,4 @@ uint32_t lv_layout_register(lv_layout_update_cb_t cb, void * user_data);
 } /*extern "C"*/
 #endif
 
-#endif /*LV_LAYOUT_H*/
+#endif /*LV_LAYOUTS_H*/

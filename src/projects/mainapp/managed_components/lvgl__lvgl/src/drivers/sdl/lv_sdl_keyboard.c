@@ -9,10 +9,10 @@
 #include "lv_sdl_keyboard.h"
 #if LV_USE_SDL
 
+#include "../../indev/lv_indev.h"
 #include "../../core/lv_group.h"
 #include "../../stdlib/lv_string.h"
-#include "../../misc/lv_text_private.h"
-#include "lv_sdl_private.h"
+#include LV_SDL_INCLUDE_PATH
 
 /*********************
  *      DEFINES
@@ -82,14 +82,8 @@ static void sdl_keyboard_read(lv_indev_t * indev, lv_indev_data_t * data)
     else if(len > 0) {
         dev->dummy_read = true;
         data->state = LV_INDEV_STATE_PRESSED;
-        data->key = 0;
-        /*Copy the first UTF8 character from the buffer*/
-        uint32_t utf8_len = lv_text_encoded_size(dev->buf);
-        if(utf8_len == 0) utf8_len = 1; /*Make sure that at least 1 character is read*/
-        lv_memcpy(&data->key, dev->buf, utf8_len);
-
-        /*Drop the first character*/
-        lv_memmove(dev->buf, dev->buf + utf8_len, len - utf8_len + 1);
+        data->key = dev->buf[0];
+        memmove(dev->buf, dev->buf + 1, len);
     }
 }
 
@@ -105,7 +99,7 @@ static void release_indev_cb(lv_event_t * e)
     }
 }
 
-void lv_sdl_keyboard_handler(SDL_Event * event)
+void _lv_sdl_keyboard_handler(SDL_Event * event)
 {
     uint32_t win_id = UINT32_MAX;
     switch(event->type) {
@@ -119,18 +113,17 @@ void lv_sdl_keyboard_handler(SDL_Event * event)
             return;
     }
 
-    lv_display_t * disp = lv_sdl_get_disp_from_win_id(win_id);
-
+    lv_display_t * disp = _lv_sdl_get_disp_from_win_id(win_id);
 
     /*Find a suitable indev*/
     lv_indev_t * indev = lv_indev_get_next(NULL);
     while(indev) {
-        if(lv_indev_get_read_cb(indev) == sdl_keyboard_read) {
-            /*If disp is NULL for any reason use the first indev with the correct type*/
-            if(disp == NULL || lv_indev_get_display(indev) == disp) break;
+        if(lv_indev_get_display(indev) == disp && lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) {
+            break;
         }
         indev = lv_indev_get_next(indev);
     }
+
     if(indev == NULL) return;
     lv_sdl_keyboard_t * dsc = lv_indev_get_driver_data(indev);
 
@@ -150,7 +143,7 @@ void lv_sdl_keyboard_handler(SDL_Event * event)
         case SDL_TEXTINPUT: {                   /*Text input*/
                 const size_t len = lv_strlen(dsc->buf) + lv_strlen(event->text.text);
                 if(len < KEYBOARD_BUFFER_SIZE - 1)
-                    lv_strcat(dsc->buf, event->text.text);
+                    strcat(dsc->buf, event->text.text);
             }
             break;
         default:

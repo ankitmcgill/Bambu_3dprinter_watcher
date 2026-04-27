@@ -6,7 +6,6 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "../../core/lv_obj_class_private.h"
 #include "lv_list.h"
 #include "../../layouts/flex/lv_flex.h"
 #include "../../display/lv_display.h"
@@ -34,21 +33,21 @@ const lv_obj_class_t lv_list_class = {
     .base_class = &lv_obj_class,
     .width_def = (LV_DPI_DEF * 3) / 2,
     .height_def = LV_DPI_DEF * 2,
-    .name = "lv_list",
+    .name = "list",
 };
 
 const lv_obj_class_t lv_list_button_class = {
     .base_class = &lv_button_class,
     .width_def = LV_PCT(100),
     .height_def = LV_SIZE_CONTENT,
-    .name = "lv_list_button",
+    .name = "list-btn",
 };
 
 const lv_obj_class_t lv_list_text_class = {
     .base_class = &lv_label_class,
     .width_def = LV_PCT(100),
     .height_def = LV_SIZE_CONTENT,
-    .name = "lv_list_text",
+    .name = "list-text",
 };
 
 /**********************
@@ -99,7 +98,7 @@ lv_obj_t * lv_list_add_button(lv_obj_t * list, const void * icon, const char * t
     if(txt) {
         lv_obj_t * label = lv_label_create(obj);
         lv_label_set_text(label, txt);
-        lv_label_set_long_mode(label, LV_LABEL_LONG_MODE_SCROLL_CIRCULAR);
+        lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL_CIRCULAR);
         lv_obj_set_flex_grow(label, 1);
     }
 
@@ -133,42 +132,6 @@ void lv_list_set_button_text(lv_obj_t * list, lv_obj_t * btn, const char * txt)
         }
     }
 }
-
-#if LV_USE_TRANSLATION
-
-lv_obj_t * lv_list_add_translation_tag(lv_obj_t * list, const char * tag)
-{
-    LV_LOG_INFO("begin");
-
-    lv_obj_t * obj = lv_list_add_text(list, NULL);
-    lv_label_set_translation_tag(obj, tag);
-    return obj;
-}
-
-lv_obj_t * lv_list_add_button_translation_tag(lv_obj_t * list, const void * icon, const char * tag)
-{
-    LV_LOG_INFO("begin");
-
-    lv_obj_t * obj = lv_list_add_button(list, icon, "");
-    lv_list_set_button_translation_tag(list, obj, tag);
-
-    return obj;
-}
-
-void lv_list_set_button_translation_tag(lv_obj_t * list, lv_obj_t * btn, const char * tag)
-{
-    LV_UNUSED(list);
-    uint32_t i;
-    for(i = 0; i < lv_obj_get_child_count(btn); i++) {
-        lv_obj_t * child = lv_obj_get_child(btn, i);
-        if(lv_obj_check_type(child, &lv_label_class)) {
-            lv_label_set_translation_tag(child, tag);
-            return;
-        }
-    }
-}
-
-#endif
 
 /**********************
  *   STATIC FUNCTIONS

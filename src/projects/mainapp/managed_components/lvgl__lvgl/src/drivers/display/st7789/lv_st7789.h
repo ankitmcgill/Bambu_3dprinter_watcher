@@ -1,5 +1,5 @@
-/**
- * @file lv_st7789.h
+/*
+ * lv_st7789.h
  *
  * This driver is just a wrapper around the generic MIPI compatible LCD controller driver
  *
@@ -84,11 +84,10 @@ void lv_st7789_send_cmd_list(lv_display_t * disp, const uint8_t * cmd_list);
  *      MACROS
  **********************/
 
-
-#endif /*LV_USE_ST7789*/
-
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif
 
-#endif /*LV_ST7789_H*/
+#endif /*LV_USE_ST7789*/
+
+#endif //LV_ST7789_H

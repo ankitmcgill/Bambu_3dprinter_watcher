@@ -18,7 +18,6 @@ extern "C" {
 #if LV_USE_ARC != 0
 
 #include "../../core/lv_obj.h"
-#include "../../core/lv_observer.h"
 
 /*********************
  *      DEFINES
@@ -27,34 +26,39 @@ extern "C" {
 /**********************
  *      TYPEDEFS
  **********************/
+enum _lv_arc_mode_t {
+    LV_ARC_MODE_NORMAL,
+    LV_ARC_MODE_SYMMETRICAL,
+    LV_ARC_MODE_REVERSE
+};
 
-/**
- * In which direction the indicator should grow.
- */
-typedef enum {
-    LV_ARC_MODE_NORMAL,      /**< Clock-wise */
-    LV_ARC_MODE_SYMMETRICAL, /**< Left/right from the midpoint */
-    LV_ARC_MODE_REVERSE      /**< Counterclock-wise */
-} lv_arc_mode_t;
+#ifdef DOXYGEN
+typedef _lv_arc_mode_t lv_arc_mode_t;
+#else
+typedef uint8_t lv_arc_mode_t;
+#endif /*DOXYGEN*/
+
+typedef struct {
+    lv_obj_t obj;
+    int32_t rotation;
+    lv_value_precise_t indic_angle_start;
+    lv_value_precise_t indic_angle_end;
+    lv_value_precise_t bg_angle_start;
+    lv_value_precise_t bg_angle_end;
+    int32_t value;              /*Current value of the arc*/
+    int32_t min_value;          /*Minimum value of the arc*/
+    int32_t max_value;          /*Maximum value of the arc*/
+    uint32_t dragging    : 1;
+    uint32_t type        : 2;
+    uint32_t min_close   : 1;   /*1: the last pressed angle was closer to minimum end*/
+    uint32_t in_out      : 1;   /* 1: The click was within the background arc angles. 0: Click outside */
+    uint32_t chg_rate;          /*Drag angle rate of change of the arc (degrees/sec)*/
+    uint32_t last_tick;         /*Last dragging event timestamp of the arc*/
+    lv_value_precise_t last_angle;         /*Last dragging angle of the arc*/
+    int16_t knob_offset;        /*knob offset from the main arc*/
+} lv_arc_t;
 
 LV_ATTRIBUTE_EXTERN_DATA extern const lv_obj_class_t lv_arc_class;
-
-#if LV_USE_OBJ_PROPERTY
-enum _lv_property_arc_id_t {
-    LV_PROPERTY_ID(ARC, START_ANGLE,        LV_PROPERTY_TYPE_PRECISE,   0),
-    LV_PROPERTY_ID(ARC, END_ANGLE,          LV_PROPERTY_TYPE_PRECISE,   1),
-    LV_PROPERTY_ID(ARC, BG_START_ANGLE,     LV_PROPERTY_TYPE_PRECISE,   2),
-    LV_PROPERTY_ID(ARC, BG_END_ANGLE,       LV_PROPERTY_TYPE_PRECISE,   3),
-    LV_PROPERTY_ID(ARC, ROTATION,           LV_PROPERTY_TYPE_INT,       4),
-    LV_PROPERTY_ID(ARC, MODE,               LV_PROPERTY_TYPE_INT,       5),
-    LV_PROPERTY_ID(ARC, VALUE,              LV_PROPERTY_TYPE_INT,       6),
-    LV_PROPERTY_ID(ARC, MIN_VALUE,          LV_PROPERTY_TYPE_INT,       7),
-    LV_PROPERTY_ID(ARC, MAX_VALUE,          LV_PROPERTY_TYPE_INT,       8),
-    LV_PROPERTY_ID(ARC, CHANGE_RATE,        LV_PROPERTY_TYPE_INT,       9),
-    LV_PROPERTY_ID(ARC, KNOB_OFFSET,        LV_PROPERTY_TYPE_INT,       10),
-    LV_PROPERTY_ARC_END,
-};
-#endif
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -127,7 +131,7 @@ void lv_arc_set_bg_angles(lv_obj_t * obj, lv_value_precise_t start, lv_value_pre
 void lv_arc_set_rotation(lv_obj_t * obj, int32_t rotation);
 
 /**
- * Set in which direction the indicator should grow.
+ * Set the type of arc.
  * @param obj       pointer to arc object
  * @param type      arc's mode
  */
@@ -147,20 +151,6 @@ void lv_arc_set_value(lv_obj_t * obj, int32_t value);
  * @param max       maximum value
  */
 void lv_arc_set_range(lv_obj_t * obj, int32_t min, int32_t max);
-
-/**
- * Set the minimum values of an arc
- * @param obj       pointer to the arc object
- * @param min       minimum value
- */
-void lv_arc_set_min_value(lv_obj_t * obj, int32_t min);
-
-/**
- * Set the maximum values of an arc
- * @param obj       pointer to the arc object
- * @param max       maximum value
- */
-void lv_arc_set_max_value(lv_obj_t * obj, int32_t max);
 
 /**
  * Set a change rate to limit the speed how fast the arc should reach the pressed point.
@@ -250,27 +240,9 @@ int32_t lv_arc_get_rotation(const lv_obj_t * obj);
  */
 int32_t lv_arc_get_knob_offset(const lv_obj_t * obj);
 
-/**
- * Get the change rate of an arc
- * @param obj       pointer to an arc object
- * @return          the change rate
- */
-uint32_t lv_arc_get_change_rate(lv_obj_t * obj);
-
 /*=====================
  * Other functions
  *====================*/
-
-#if LV_USE_OBSERVER
-/**
- * Bind an integer subject to an Arc's value.
- * @param obj       pointer to Arc
- * @param subject   pointer to Subject
- * @return          pointer to newly-created Observer
- */
-lv_observer_t * lv_arc_bind_value(lv_obj_t * obj, lv_subject_t * subject);
-#endif
-
 
 /**
  * Align an object to the current position of the arc (knob)

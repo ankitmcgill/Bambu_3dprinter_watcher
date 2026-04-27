@@ -18,6 +18,9 @@ extern "C" {
 
 #include "lv_types.h"
 
+#include <stdint.h>
+#include <stddef.h>
+
 /*********************
  *      DEFINES
  *********************/
@@ -39,7 +42,7 @@ typedef void (*lv_lru_free_cb_t)(void * v);
 
 typedef struct _lv_lru_item_t lv_lru_item_t;
 
-typedef struct _lv_lru_t {
+typedef struct lv_lru_t {
     lv_lru_item_t ** items;
     uint64_t access_count;
     size_t free_memory;

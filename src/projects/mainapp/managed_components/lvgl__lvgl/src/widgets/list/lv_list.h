@@ -1,5 +1,5 @@
 /**
- * @file lv_list.h
+ * @file lv_win.h
  *
  */
 
@@ -16,10 +16,6 @@ extern "C" {
 #include "../../core/lv_obj.h"
 
 #if LV_USE_LIST
-
-#if LV_USE_FLEX == 0
-#error "lv_list: lv_flex is required. Enable it in lv_conf.h (LV_USE_FLEX 1)"
-#endif
 
 /*********************
  *      DEFINES
@@ -73,37 +69,9 @@ const char * lv_list_get_button_text(lv_obj_t * list, lv_obj_t * btn);
  * @param list      pointer to a list
  * @param btn       pointer to the button
  * @param txt       pointer to the text
+ * @return          text of btn, if btn doesn't have text "" will be returned
  */
 void lv_list_set_button_text(lv_obj_t * list, lv_obj_t * btn, const char * txt);
-
-#if LV_USE_TRANSLATION
-
-/**
- * Add translation tag text to a list
- * @param list      pointer to a list, it will be the parent of the new label
- * @param tag       translation tag of the new label
- * @return          pointer to the created label
- */
-lv_obj_t * lv_list_add_translation_tag(lv_obj_t * list, const char * tag);
-
-/**
- * Add translation tag button to a list
- * @param list      pointer to a list, it will be the parent of the new button
- * @param icon      icon for the button, when NULL it will have no icon
- * @param tag       translation tag of the new button, when NULL no translation tag will be added
- * @return          pointer to the created button
- */
-lv_obj_t * lv_list_add_button_translation_tag(lv_obj_t * list, const void * icon, const char * tag);
-
-/**
- * Set translation tag text of a given list button
- * @param list      pointer to a list
- * @param btn       pointer to the button
- * @param tag       pointer to the translation tag
- */
-void lv_list_set_button_translation_tag(lv_obj_t * list, lv_obj_t * btn, const char * tag);
-
-#endif
 
 /**********************
  *      MACROS
