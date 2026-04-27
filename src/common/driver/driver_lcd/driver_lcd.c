@@ -25,9 +25,8 @@
 #include "define_rtos_tasks.h"
 #include "bsp.h"
 
-#if __has_include("ui.h")
+#ifdef DRIVER_LCD_HAS_PROJECT_UI
 #include "ui.h"
-#define DRIVER_LCD_HAS_PROJECT_UI 1
 #endif
 
 // Private Defines
@@ -265,9 +264,17 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
-                        case DRIVER_LCD_COMMAND_LOAD_UI:
+                        case DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_STARTUP:
                             #ifdef DRIVER_LCD_HAS_PROJECT_UI
                             ui_init();
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_STARTUP");
+                            #endif
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "poooo");
+                            break;
+                        
+                        case DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_HOME:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI    
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_HOME");
                             #endif
                             break;
 

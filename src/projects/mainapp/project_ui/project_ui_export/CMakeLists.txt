@@ -11,6 +11,8 @@ idf_component_register(SRCS
                             ui_img_icon_clock_png.c
                             ui_img_icon_printer_png.c
                             ui_img_icon_3dprinter_png.c
+                        INCLUDE_DIRS
+                            "."
                         PRIV_REQUIRES
                             lvgl__lvgl
 )

@@ -16,8 +16,8 @@ extern "C" {
 #include "ui_events.h"
 
 ///////////////////// SCREENS ////////////////////
-#include "ui_Screen1.h"
 #include "ui_Screen2.h"
+#include "ui_Screen1.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -25,13 +25,13 @@ extern "C" {
 extern lv_obj_t *ui____initial_actions0;
 
 // IMAGES AND IMAGE SETS
+LV_IMG_DECLARE( ui_img_icon_3dprinter_png);   // assets/icon_3dprinter.png
 LV_IMG_DECLARE( ui_img_icon_heat_png);   // assets/icon_heat.png
 LV_IMG_DECLARE( ui_img_icon_nozzle_png);   // assets/icon_nozzle.png
 LV_IMG_DECLARE( ui_img_icon_percent_png);   // assets/icon_percent.png
 LV_IMG_DECLARE( ui_img_icon_layers_png);   // assets/icon_layers.png
 LV_IMG_DECLARE( ui_img_icon_clock_png);   // assets/icon_clock.png
 LV_IMG_DECLARE( ui_img_icon_printer_png);   // assets/icon_printer.png
-LV_IMG_DECLARE( ui_img_icon_3dprinter_png);   // assets/icon_3dprinter.png
 
 // UI INIT
 void ui_init(void);

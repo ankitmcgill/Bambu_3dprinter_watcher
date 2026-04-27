@@ -5,7 +5,7 @@
 
 #include "ui.h"
 
-lv_obj_t *ui_Screen2 = NULL;lv_obj_t *ui_Container13 = NULL;lv_obj_t *ui_Image3 = NULL;lv_obj_t *ui_Label23 = NULL;
+lv_obj_t *ui_Screen2 = NULL;lv_obj_t *ui_Container13 = NULL;lv_obj_t *ui_Image3 = NULL;lv_obj_t *ui_Screen2LabelMessage = NULL;
 // event funtions
 
 // build funtions
@@ -38,17 +38,17 @@ lv_obj_set_align( ui_Image3, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image3, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_remove_flag( ui_Image3, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
-ui_Label23 = lv_label_create(ui_Container13);
-lv_obj_set_width( ui_Label23, lv_pct(100));
-lv_obj_set_height( ui_Label23, LV_SIZE_CONTENT);   /// 1
-lv_obj_set_align( ui_Label23, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Label23,"Connecting To\nWi-Fi ...");
-lv_obj_set_style_text_align(ui_Label23, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label23, &lv_font_montserrat_16, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_left(ui_Label23, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_right(ui_Label23, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_top(ui_Label23, 15, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_bottom(ui_Label23, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+ui_Screen2LabelMessage = lv_label_create(ui_Container13);
+lv_obj_set_width( ui_Screen2LabelMessage, lv_pct(100));
+lv_obj_set_height( ui_Screen2LabelMessage, LV_SIZE_CONTENT);   /// 1
+lv_obj_set_align( ui_Screen2LabelMessage, LV_ALIGN_CENTER );
+lv_label_set_text(ui_Screen2LabelMessage,"Connecting To\nWi-Fi ...");
+lv_obj_set_style_text_align(ui_Screen2LabelMessage, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Screen2LabelMessage, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_left(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_right(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_top(ui_Screen2LabelMessage, 15, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_bottom(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 }
 
@@ -60,6 +60,6 @@ void ui_Screen2_screen_destroy(void)
 ui_Screen2= NULL;
 ui_Container13= NULL;
 ui_Image3= NULL;
-ui_Label23= NULL;
+ui_Screen2LabelMessage= NULL;
 
 }
