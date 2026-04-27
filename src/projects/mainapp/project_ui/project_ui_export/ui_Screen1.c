@@ -113,7 +113,7 @@ lv_obj_set_height( ui_Image1, 36);
 lv_obj_set_align( ui_Image1, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image1, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_remove_flag( ui_Image1, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-lv_image_set_inner_align( ui_Image1, LV_IMAGE_ALIGN_TILE );
+lv_image_set_scale(ui_Image1,200);
 lv_obj_set_style_border_width(ui_Image1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Image1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Image1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -389,8 +389,7 @@ lv_obj_set_height( ui_Image5, 36);
 lv_obj_set_align( ui_Image5, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image5, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_remove_flag( ui_Image5, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-lv_image_set_scale(ui_Image5,220);
-lv_image_set_inner_align( ui_Image5, LV_IMAGE_ALIGN_TILE );
+lv_image_set_scale(ui_Image5,200);
 lv_obj_set_style_border_width(ui_Image5, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Image5, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Image5, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -477,7 +476,7 @@ lv_obj_set_height( ui_Image4, 36);
 lv_obj_set_align( ui_Image4, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image4, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_remove_flag( ui_Image4, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-lv_image_set_inner_align( ui_Image4, LV_IMAGE_ALIGN_TILE );
+lv_image_set_scale(ui_Image4,220);
 lv_obj_set_style_border_width(ui_Image4, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Image4, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Image4, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -615,7 +614,7 @@ lv_obj_set_height( ui_Image6, 36);
 lv_obj_set_align( ui_Image6, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image6, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_remove_flag( ui_Image6, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-lv_image_set_inner_align( ui_Image6, LV_IMAGE_ALIGN_TILE );
+lv_image_set_scale(ui_Image6,230);
 lv_obj_set_style_border_width(ui_Image6, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Image6, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Image6, 0, LV_PART_MAIN| LV_STATE_DEFAULT);

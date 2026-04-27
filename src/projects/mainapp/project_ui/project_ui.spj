@@ -1652,13 +1652,13 @@
                       {
                         "nid": 1050,
                         "strtype": "IMAGE/Scale",
-                        "integer": 256,
+                        "integer": 200,
                         "InheritedType": 6
                       },
                       {
                         "nid": 1060,
                         "strtype": "IMAGE/Inner_align",
-                        "strval": "TILE",
+                        "strval": "CENTER",
                         "InheritedType": 3
                       },
                       {
@@ -3445,7 +3445,7 @@
                       },
                       {
                         "nid": 1030,
-                        "flags": 16,
+                        "flags": 2097168,
                         "strtype": "IMAGE/Pivot",
                         "intarray": [
                           0,
@@ -3455,11 +3455,13 @@
                       },
                       {
                         "nid": 1040,
+                        "flags": 2097152,
                         "strtype": "IMAGE/Rotation",
                         "InheritedType": 6
                       },
                       {
                         "nid": 1050,
+                        "flags": 2097152,
                         "strtype": "IMAGE/Scale",
                         "integer": 256,
                         "InheritedType": 6
@@ -5270,13 +5272,13 @@
                       {
                         "nid": 1050,
                         "strtype": "IMAGE/Scale",
-                        "integer": 220,
+                        "integer": 200,
                         "InheritedType": 6
                       },
                       {
                         "nid": 1060,
                         "strtype": "IMAGE/Inner_align",
-                        "strval": "TILE",
+                        "strval": "CENTER",
                         "InheritedType": 3
                       },
                       {
@@ -6380,13 +6382,13 @@
                       {
                         "nid": 1050,
                         "strtype": "IMAGE/Scale",
-                        "integer": 256,
+                        "integer": 220,
                         "InheritedType": 6
                       },
                       {
                         "nid": 1060,
                         "strtype": "IMAGE/Inner_align",
-                        "strval": "TILE",
+                        "strval": "CENTER",
                         "InheritedType": 3
                       },
                       {
@@ -8189,13 +8191,13 @@
                       {
                         "nid": 1050,
                         "strtype": "IMAGE/Scale",
-                        "integer": 256,
+                        "integer": 230,
                         "InheritedType": 6
                       },
                       {
                         "nid": 1060,
                         "strtype": "IMAGE/Inner_align",
-                        "strval": "TILE",
+                        "strval": "CENTER",
                         "InheritedType": 3
                       },
                       {
@@ -10053,7 +10055,7 @@
   },
   "animations": [],
   "selected_theme": "Default",
-  "selected_screen": "GUID84283880-554231S1675117",
+  "selected_screen": "GUID1649013-209991S13615116",
   "info": {
     "name": "project_ui.spj",
     "depth": 1,
@@ -10082,7 +10084,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 79,
+    "backup_cnt": 81,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
