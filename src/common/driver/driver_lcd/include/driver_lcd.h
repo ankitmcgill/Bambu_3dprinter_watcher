@@ -24,10 +24,14 @@
 
 typedef enum {
     DRIVER_LCD_COMMAND_DEMO = 0,
-    DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_STARTUP,
-    DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_HOME,
+    DRIVER_LCD_COMMAND_LOAD_UI_SCREEN,
     DRIVER_LCD_COMMAND_REFRESH_UI,
 }driver_lcd_command_type_t;
+
+typedef enum {
+    DRIVER_LCD_SCREEN_STARTUP = 0,
+    DRIVER_LCD_SCREEN_HOME
+}driver_lcd_screen_type_t;
 
 bool DRIVER_LCD_Init(void);
 

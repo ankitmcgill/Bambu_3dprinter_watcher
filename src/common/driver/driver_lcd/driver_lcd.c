@@ -264,17 +264,20 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
-                        case DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_STARTUP:
+                        case DRIVER_LCD_COMMAND_LOAD_UI_SCREEN:
                             #ifdef DRIVER_LCD_HAS_PROJECT_UI
-                            ui_init();
-                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_STARTUP");
-                            #endif
-                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "poooo");
-                            break;
-                        
-                        case DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_HOME:
-                            #ifdef DRIVER_LCD_HAS_PROJECT_UI    
-                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN_HOME");
+                            switch(dq_i.data_buff.value.uint8) {
+                                case DRIVER_LCD_SCREEN_STARTUP:
+                                    ui_init();
+                                ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN");
+                                    break;
+                                
+                                case DRIVER_LCD_SCREEN_HOME:
+                                    break;
+                                
+                                default:
+                                    break;
+                            }
                             #endif
                             break;
 

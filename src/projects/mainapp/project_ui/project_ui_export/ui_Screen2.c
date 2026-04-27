@@ -27,7 +27,7 @@ lv_obj_set_style_bg_color(ui_Container13, lv_color_hex(0x0B0F14), LV_PART_MAIN |
 lv_obj_set_style_bg_opa(ui_Container13, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Container13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Container13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_top(ui_Container13, 25, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_top(ui_Container13, 50, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_bottom(ui_Container13, 10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Image3 = lv_image_create(ui_Container13);
@@ -43,11 +43,13 @@ lv_obj_set_width( ui_Screen2LabelMessage, lv_pct(100));
 lv_obj_set_height( ui_Screen2LabelMessage, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Screen2LabelMessage, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Screen2LabelMessage,"Connecting To\nWi-Fi ...");
+lv_obj_set_style_text_color(ui_Screen2LabelMessage, lv_color_hex(0x4AA470), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_Screen2LabelMessage, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_align(ui_Screen2LabelMessage, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Screen2LabelMessage, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_top(ui_Screen2LabelMessage, 15, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_top(ui_Screen2LabelMessage, 30, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_bottom(ui_Screen2LabelMessage, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 }

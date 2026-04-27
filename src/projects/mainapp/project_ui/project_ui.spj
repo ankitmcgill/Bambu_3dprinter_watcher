@@ -317,6 +317,18 @@
                         "strval": "DEFAULT",
                         "childs": [
                           {
+                            "nid": 10410,
+                            "flags": 4096,
+                            "strtype": "_style/Text_Color",
+                            "intarray": [
+                              74,
+                              164,
+                              112,
+                              255
+                            ],
+                            "InheritedType": 7
+                          },
+                          {
                             "nid": 10430,
                             "strtype": "_style/Text_Align",
                             "strval": "CENTER",
@@ -335,7 +347,7 @@
                             "intarray": [
                               0,
                               0,
-                              15,
+                              30,
                               0
                             ],
                             "InheritedType": 7
@@ -495,7 +507,7 @@
                         "intarray": [
                           0,
                           0,
-                          25,
+                          50,
                           10
                         ],
                         "InheritedType": 7
@@ -10070,7 +10082,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 72,
+    "backup_cnt": 78,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

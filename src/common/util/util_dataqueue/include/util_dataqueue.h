@@ -20,17 +20,7 @@ typedef enum{
 typedef struct{
     union{
         char ip[16];
-        struct{
-            uint32_t timestamp;
-            char time_string[16];
-            char am_pm_string[3];
-            char date_string[48];
-        }timedata;
-        struct{
-            char humidity[8];
-            char temp[8];
-        }weatherdata;
-        char location[16];
+        uint8_t uint8;
     }value;
 }util_dataqueue_data_buffer_type_t;
 
