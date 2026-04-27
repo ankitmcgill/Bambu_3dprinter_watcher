@@ -269,15 +269,16 @@ static void s_task_lvgl(void *arg)
                             switch(dq_i.data_buff.value.uint8) {
                                 case DRIVER_LCD_SCREEN_STARTUP:
                                     ui_init();
-                                ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN");
                                     break;
                                 
                                 case DRIVER_LCD_SCREEN_HOME:
+                                    lv_scr_load(ui_Screen1);
                                     break;
                                 
                                 default:
                                     break;
                             }
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_LOAD_UI_SCREEN - %u", dq_i.data_buff.value.uint8);
                             #endif
                             break;
 

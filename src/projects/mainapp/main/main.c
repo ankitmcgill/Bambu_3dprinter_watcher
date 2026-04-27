@@ -85,11 +85,18 @@ void app_main(void)
     // Start Scheduler
     // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
     
-    // Connect To Wifi
+    // Show Startup Display
     util_dataqueue_item_t dq_i;
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
     dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_STARTUP;
+    DRIVER_LCD_AddCommand(&dq_i);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
+    dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
     DRIVER_LCD_AddCommand(&dq_i);
 
     while(true)

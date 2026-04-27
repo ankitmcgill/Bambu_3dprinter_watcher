@@ -14,6 +14,7 @@ void ui_Screen2_screen_init(void)
 {
 ui_Screen2 = lv_obj_create(NULL);
 lv_obj_remove_flag( ui_Screen2, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+lv_obj_add_event_cb(ui_Screen2, scr_unloaded_delete_cb, LV_EVENT_SCREEN_UNLOADED, ui_Screen2_screen_destroy);
 
 ui_Container13 = lv_obj_create(ui_Screen2);
 lv_obj_remove_style_all(ui_Container13);

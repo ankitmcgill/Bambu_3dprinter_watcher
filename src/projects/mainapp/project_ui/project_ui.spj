@@ -622,7 +622,7 @@
           {
             "nid": 1020,
             "strtype": "SCREEN/Temporary",
-            "strval": "False",
+            "strval": "True",
             "InheritedType": 2
           },
           {
@@ -10082,7 +10082,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 78,
+    "backup_cnt": 79,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
