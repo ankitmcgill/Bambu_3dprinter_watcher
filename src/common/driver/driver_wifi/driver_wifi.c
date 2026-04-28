@@ -26,7 +26,7 @@ static util_dataqueue_t* s_notification_targets[DRIVER_WIFI_NOTIFICATION_TARGET_
 static char s_ssid[DRIVER_WIFI_LEN_SSID_MAX];
 static char s_password[DRIVER_WIFI_LEN_PWD_MAX];
 static uint16_t s_scan_ap_count;
-// static uint8_t s_ap_start_event_count;
+static uint8_t s_ap_start_event_count;
 static wifi_ap_record_t* s_scan_ap_records;
 
 // Local Functions
@@ -287,7 +287,7 @@ static void s_task_function(void *pvParameters)
                             break;
 
                         case DRIVER_WIFI_COMMAND_AP_BROADCAST:
-                            // s_ap_start_event_count = 0;
+                            s_ap_start_event_count = 0;
                             s_wifi_ap_broadcast();
                             break;
 
@@ -343,13 +343,13 @@ static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t
                 // Espressif Devices (Esp32/Esp8266) When Switching From Station (Sta) To Access Point Station (Apsta) Mode. 
                 // This Happens Because The System Initiates A Default Access Point When You First Set The Mode, And Then
                 // Initiates A Second One When You Apply Your Specific Configuration, Such As Custom Ssids Or Passwords
-                // s_ap_start_event_count += 1;
-                // if(s_ap_start_event_count == 2) {
+                s_ap_start_event_count += 1;
+                if(s_ap_start_event_count == 2) {
                     ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_START");
                     
                     dq_i.data = DRIVER_WIFI_NOTIFICATION_APSTARTED;
                     s_notify(&dq_i, 0);
-                // }
+                }
                 break;
 
             case WIFI_EVENT_AP_STACONNECTED: {

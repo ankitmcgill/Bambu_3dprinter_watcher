@@ -41,7 +41,6 @@ static uint8_t s_wifi_retry_count;
 static TaskHandle_t s_dns_task_handle;
 static httpd_handle_t s_http_server;
 static volatile bool s_portal_connect_pending;
-static bool s_portal_ap_requested;
 static char s_html_buf[4096];
 
 // Local Functions
@@ -53,7 +52,6 @@ static void s_nvs_write_str(const char* key, const char* val);
 static void s_url_decode(const char* in, char* out, size_t out_len);
 static void s_form_field(const char* body, const char* key, char* out, size_t out_len);
 static void s_captive_portal_start(void);
-static void s_captive_portal_stop(void);
 // Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
@@ -75,7 +73,6 @@ bool MODULE_WIFI_Init(void)
     s_http_server = NULL;
     s_dns_task_handle = NULL;
     s_portal_connect_pending = false;
-    s_portal_ap_requested = false;
 
     // Create Data Queue
     UTIL_DATAQUEUE_Create(&s_dataqueue, MODULE_WIFI_DATAQUEUE_MAX);
@@ -101,6 +98,10 @@ bool MODULE_WIFI_Init(void)
 
     // Add Notification Targets
     DRIVER_WIFI_AddNotificationTarget(&s_dataqueue);
+
+    // Start AP Broadcast - captive portal is always active
+    util_dataqueue_item_t ap_cmd = { .data_type = DATA_TYPE_COMMAND, .data = DRIVER_WIFI_COMMAND_AP_BROADCAST };
+    DRIVER_WIFI_AddCommand(&ap_cmd);
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Type %u. Init", s_component_type);
 
@@ -213,7 +214,6 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_SCAN:
             s_wifi_retry_count = 0;
-            s_portal_ap_requested = false;
             dq_i.data_type = DATA_TYPE_COMMAND;
             dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
             DRIVER_WIFI_AddCommand(&dq_i);
@@ -225,27 +225,8 @@ static void s_state_mainiter(void)
             break;
 
         case MODULE_WIFI_STATE_SCAN_DONE:
-            s_state_set(MODULE_WIFI_STATE_CAPTIVE_PORTAL);
-            break;
-
-        case MODULE_WIFI_STATE_CAPTIVE_PORTAL:
-            // Start AP broadcast once on entry
-            if(!s_portal_ap_requested) {
-                s_portal_ap_requested = true;
-                dq_i.data_type = DATA_TYPE_COMMAND;
-                dq_i.data = DRIVER_WIFI_COMMAND_AP_BROADCAST;
-                DRIVER_WIFI_AddCommand(&dq_i);
-            }
-
-            // Connect requested from portal form
-            if(s_portal_connect_pending) {
-                s_portal_connect_pending = false;
-                s_portal_ap_requested = false;
-                s_captive_portal_stop();
-                s_wifi_credential_source = MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS;
-                s_wifi_retry_count = MODULE_WIFI_WIFI_CONNECT_RETRY_MAX;
-                s_state_set(MODULE_WIFI_STATE_CONNECT);
-            }
+            // Restart Connection Logic
+            s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
 
         case MODULE_WIFI_STATE_CONNECT:
@@ -354,11 +335,7 @@ static void s_task_function(void *pvParameters)
 
                         case DRIVER_WIFI_NOTIFICATION_APSTARTED:
                             // Start Captive Portal HTTP Server Once AP Is Up
-                            if(s_state == MODULE_WIFI_STATE_CAPTIVE_PORTAL){
-                                if(!s_portal_ap_requested){
-                                    s_captive_portal_start();
-                                }
-                            }
+                            s_captive_portal_start();
                             break;
 
                         default:
@@ -366,6 +343,17 @@ static void s_task_function(void *pvParameters)
                     }
                 }
             }
+        }
+
+        // Handle Portal Connect Request (state-independent - portal is always active)
+        if(s_portal_connect_pending) {
+            s_portal_connect_pending = false;
+            if(esp_timer_is_active(s_wifi_timer_handle)){
+                ESP_ERROR_CHECK(esp_timer_stop(s_wifi_timer_handle));
+            }
+            s_wifi_credential_source = MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS;
+            s_wifi_retry_count = MODULE_WIFI_WIFI_CONNECT_RETRY_MAX;
+            s_state_set(MODULE_WIFI_STATE_CONNECT);
         }
 
         // Run State Mainiter
@@ -527,7 +515,7 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
         "<label>Wi-Fi Network</label>"
         "<select name='ssid'>%s</select>"
         "<label>Password</label>"
-        "<input type='password' name='pwd' placeholder='Leave blank to keep saved password'>"
+        "<input type='text' name='pwd' placeholder='Leave blank to keep saved password'>"
         "<label>Bambu API Key</label>"
         "<input type='text' name='api_key' value='%s' placeholder='Enter API key'>"
         "<button type='submit'>Save &amp; Connect</button>"
@@ -644,21 +632,6 @@ static void s_captive_portal_start(void)
     );
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal started at http://192.168.4.1/");
-}
-
-static void s_captive_portal_stop(void)
-{
-    // Stop HTTP Server And DNS Task
-
-    if(s_http_server != NULL) {
-        httpd_stop(s_http_server);
-        s_http_server = NULL;
-    }
-    if(s_dns_task_handle != NULL) {
-        vTaskDelete(s_dns_task_handle);
-        s_dns_task_handle = NULL;
-    }
-    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal stopped");
 }
 
 static void s_nvs_read_str(const char* key, char* out, size_t out_len)
