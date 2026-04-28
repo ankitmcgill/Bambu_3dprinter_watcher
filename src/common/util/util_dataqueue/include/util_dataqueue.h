@@ -21,6 +21,7 @@ typedef struct{
     union{
         char ip[16];
         uint8_t uint8;
+        char msg[64];
     }value;
 }util_dataqueue_data_buffer_type_t;
 

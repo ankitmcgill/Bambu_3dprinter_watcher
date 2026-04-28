@@ -15,6 +15,7 @@
 #include "lwip/netdb.h"
 
 #include "module_wifi.h"
+#include "driver_lcd.h"
 #include "define_common_data_types.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
@@ -34,6 +35,7 @@ static module_wifi_state_t s_state_prev;
 static util_dataqueue_t s_dataqueue;
 static uint8_t s_notification_targets_count;
 static util_dataqueue_t* s_notification_targets[MODULE_WIFI_NOTIFICATION_TARGET_MAX];
+static util_dataqueue_item_t s_dq_i;
 static module_wifi_state_t s_wifi_credential_source;
 static rtos_component_type_t s_component_type;
 static esp_timer_handle_t s_wifi_timer_handle;
@@ -52,6 +54,7 @@ static void s_nvs_write_str(const char* key, const char* val);
 static void s_url_decode(const char* in, char* out, size_t out_len);
 static void s_form_field(const char* body, const char* key, char* out, size_t out_len);
 static void s_captive_portal_start(void);
+static void s_set_lcd_message(const char* format, ...);
 // Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
@@ -176,6 +179,8 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS:
             s_wifi_retry_count = 0;
+            s_set_lcd_message("Checking Saved\nWiFi Credentials");
+            
             if(DRIVER_WIFI_CheckSavedWifiCredentials())
             {
                 // WiFi Connect
@@ -186,11 +191,12 @@ static void s_state_mainiter(void)
             }
 
             // No Saved Credentials
-            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Saved Wi-Fi Credential Found");
+            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Saved Wi-Fi\nCredential Found");
             s_state_set(MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS);
             break;
 
         case MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS:
+            s_set_lcd_message("Checking Default\nWiFi Credentials");
             s_wifi_retry_count = 0;
             #if defined(DEFAULT_WIFI_SSID) && defined(DEFAULT_WIFI_PASSWORD)
                     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Default Wi-Fi Credential Found");
@@ -208,11 +214,12 @@ static void s_state_mainiter(void)
             #endif
 
             // No Default Credentials
-            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Default Wi-Fi Credential Found");
+            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Default Wi-Fi\nCredential Found");
             s_state_set(MODULE_WIFI_STATE_SCAN);
             break;
 
         case MODULE_WIFI_STATE_SCAN:
+            s_set_lcd_message("Running WiFi Scan");
             s_wifi_retry_count = 0;
             dq_i.data_type = DATA_TYPE_COMMAND;
             dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
@@ -226,6 +233,7 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_SCAN_DONE:
             // Restart Connection Logic
+            s_set_lcd_message("WiFi Scan Done");
             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
 
@@ -245,10 +253,12 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_CONNECTED:
             // Do Nothing
+            s_set_lcd_message("Connected To\nWiFi");
             break;
 
         case MODULE_WIFI_STATE_GOT_IP:
             // Stop Timer
+            s_set_lcd_message("Got IP\n%s", s_dq_i.data_buff.value.ip);
             if(esp_timer_is_active(s_wifi_timer_handle)){
                 ESP_ERROR_CHECK(esp_timer_stop(s_wifi_timer_handle));
             }
@@ -275,21 +285,20 @@ static void s_task_function(void *pvParameters)
 {
     // Task Function
 
-    util_dataqueue_item_t dq_i;
-
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Starting task");
 
+    memset(&s_dq_i, 0, sizeof(util_dataqueue_item_t));
     while(true){
         // Check Data Queue
         if(UTIL_DATAQUEUE_MessageCheck(&s_dataqueue))
         {
-            if(UTIL_DATAQUEUE_MessageGet(&s_dataqueue, &dq_i, 0))
+            if(UTIL_DATAQUEUE_MessageGet(&s_dataqueue, &s_dq_i, 0))
             {
-                ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "New In DataQueue. Type %u, Data %u", dq_i.data_type, dq_i.data);
+                ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "New In DataQueue. Type %u, Data %u", s_dq_i.data_type, s_dq_i.data);
 
-                if(dq_i.data_type == DATA_TYPE_COMMAND)
+                if(s_dq_i.data_type == DATA_TYPE_COMMAND)
                 {
-                    switch(dq_i.data)
+                    switch(s_dq_i.data)
                     {
                         case MODULE_WIFI_COMMAND_CONNECT:
                             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
@@ -299,13 +308,13 @@ static void s_task_function(void *pvParameters)
                             break;
                     }
                 }
-                else if(dq_i.data_type == DATA_TYPE_NOTIFICATION)
+                else if(s_dq_i.data_type == DATA_TYPE_NOTIFICATION)
                 {
                     // Pass Notification To Module Wifi Notification Targets
-                    s_notify(&dq_i, 0);
+                    s_notify(&s_dq_i, 0);
 
                     // Take Action On Notification
-                    switch(dq_i.data)
+                    switch(s_dq_i.data)
                     {
                         case DRIVER_WIFI_NOTIFICATION_SCAN_DONE:
                             s_state_set(MODULE_WIFI_STATE_SCAN_DONE);
@@ -632,6 +641,24 @@ static void s_captive_portal_start(void)
     );
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal started at http://192.168.4.1/");
+}
+
+void s_set_lcd_message(const char* format, ...)
+{
+    // Set LCD Message
+
+    util_dataqueue_item_t dq_i;
+    char message[64];
+    va_list arglist;
+
+    va_start(arglist, format);
+    vsprintf(message, format, arglist);
+    va_end(arglist);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
+    strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
+    DRIVER_LCD_AddCommand(&dq_i);
 }
 
 static void s_nvs_read_str(const char* key, char* out, size_t out_len)

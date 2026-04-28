@@ -285,6 +285,13 @@ static void s_task_lvgl(void *arg)
                         case DRIVER_LCD_COMMAND_REFRESH_UI:
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen2LabelMessage, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
                         default:
                             break;
                     }

@@ -26,6 +26,7 @@ typedef enum {
     DRIVER_LCD_COMMAND_DEMO = 0,
     DRIVER_LCD_COMMAND_LOAD_UI_SCREEN,
     DRIVER_LCD_COMMAND_REFRESH_UI,
+    DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE,
 }driver_lcd_command_type_t;
 
 typedef enum {
