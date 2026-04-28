@@ -3,6 +3,8 @@ idf_component_register(SRCS "main.c"
                             driver_chipinfo
                             driver_appinfo
                             driver_lcd
+                            driver_wifi
+                            module_wifi
                             util_dataqueue
                             defines
                             project_defines

@@ -4,7 +4,7 @@
 #ifndef _PROJECT_DEFINES_
 #define _PROJECT_DEFINES_
 
-#define PROJECT_NAME            ("Test_Wifi")
+#define PROJECT_NAME            ("Mainapp")
 
 #define DEBUG_TAG_MAIN          ("Main")
 

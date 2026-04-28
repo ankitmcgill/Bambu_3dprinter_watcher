@@ -11,6 +11,8 @@
 #include "driver_chipinfo.h"
 #include "driver_appinfo.h"
 #include "driver_lcd.h"
+#include "driver_wifi.h"
+#include "module_wifi.h"
 #include "util_dataqueue.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
@@ -79,12 +81,9 @@ void app_main(void)
     ESP_LOGI(DEBUG_TAG_MAIN, "Init");
     ESP_LOGI(DEBUG_TAG_MAIN, "");
 
-    // Intialize Drivers & Modules
+    // Intialize Display
     DRIVER_LCD_Init();
 
-    // Start Scheduler
-    // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
-    
     // Show Startup Display
     util_dataqueue_item_t dq_i;
     dq_i.data_type = DATA_TYPE_COMMAND;
@@ -92,12 +91,16 @@ void app_main(void)
     dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_STARTUP;
     DRIVER_LCD_AddCommand(&dq_i);
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    // Intialize NEtwork
+    DRIVER_WIFI_Init();
+    MODULE_WIFI_Init();
 
     dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
-    dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
-    DRIVER_LCD_AddCommand(&dq_i);
+    dq_i.data = MODULE_WIFI_COMMAND_CONNECT;
+    MODULE_WIFI_AddCommand(&dq_i);
+    
+    // Start Scheduler
+    // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
 
     while(true)
     {

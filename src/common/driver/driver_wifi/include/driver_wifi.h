@@ -42,6 +42,7 @@ bool DRIVER_WIFI_Init(void);
 
 bool DRIVER_WIFI_CheckSavedWifiCredentials(void);
 void DRIVER_WIFI_SetWifiCredentials(uint8_t* ssid, uint8_t* pwd);
+void DRIVER_WIFI_GetScanResults(wifi_ap_record_t** records, uint16_t* count);
 
 bool DRIVER_WIFI_AddCommand(util_dataqueue_item_t* dq_i);
 bool DRIVER_WIFI_AddNotificationTarget(util_dataqueue_t* dq);

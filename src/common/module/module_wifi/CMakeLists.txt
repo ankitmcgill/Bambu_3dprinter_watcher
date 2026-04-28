@@ -5,6 +5,8 @@ idf_component_register(SRCS "module_wifi.c"
                             util_dataqueue
                             defines
                             project_defines
+                            esp_http_server
+                            lwip
                        REQUIRES
                             esp_wifi
                             esp_timer

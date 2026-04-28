@@ -26,6 +26,7 @@ static util_dataqueue_t* s_notification_targets[DRIVER_WIFI_NOTIFICATION_TARGET_
 static char s_ssid[DRIVER_WIFI_LEN_SSID_MAX];
 static char s_password[DRIVER_WIFI_LEN_PWD_MAX];
 static uint16_t s_scan_ap_count;
+// static uint8_t s_ap_start_event_count;
 static wifi_ap_record_t* s_scan_ap_records;
 
 // Local Functions
@@ -35,7 +36,6 @@ static void s_wifi_ap_broadcast(void);
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
 static void s_task_function(void *pvParameters);
 static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-static void s_event_handler_smartconfig(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 // External Functions
 bool DRIVER_WIFI_Init(void)
@@ -92,12 +92,6 @@ bool DRIVER_WIFI_Init(void)
         &s_event_handler_wifi,
         NULL
     ));
-    ESP_ERROR_CHECK(esp_event_handler_register(
-        SC_EVENT, 
-        ESP_EVENT_ANY_ID, 
-        &s_event_handler_smartconfig, 
-        NULL
-    ));
 
     // Create Driver Wifi Task
     xTaskCreate(
@@ -143,6 +137,12 @@ void DRIVER_WIFI_SetWifiCredentials(uint8_t* ssid, uint8_t* pwd)
 
     memcpy(s_ssid, ssid, DRIVER_WIFI_LEN_SSID_MAX);
     memcpy(s_password, pwd, DRIVER_WIFI_LEN_PWD_MAX);
+}
+
+void DRIVER_WIFI_GetScanResults(wifi_ap_record_t** records, uint16_t* count)
+{
+    *records = s_scan_ap_records;
+    *count   = s_scan_ap_count;
 }
 
 bool DRIVER_WIFI_AddCommand(util_dataqueue_item_t* dq_i)
@@ -287,6 +287,7 @@ static void s_task_function(void *pvParameters)
                             break;
 
                         case DRIVER_WIFI_COMMAND_AP_BROADCAST:
+                            // s_ap_start_event_count = 0;
                             s_wifi_ap_broadcast();
                             break;
 
@@ -338,10 +339,17 @@ static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t
                 break;
             
             case WIFI_EVENT_AP_START:
-                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_START");
-
-                dq_i.data = DRIVER_WIFI_NOTIFICATION_APSTARTED;
-                s_notify(&dq_i, 0);
+                // Seeing The Wifi_Event_Ap_Start Event Triggered Twice Is A Common Occurrence On
+                // Espressif Devices (Esp32/Esp8266) When Switching From Station (Sta) To Access Point Station (Apsta) Mode. 
+                // This Happens Because The System Initiates A Default Access Point When You First Set The Mode, And Then
+                // Initiates A Second One When You Apply Your Specific Configuration, Such As Custom Ssids Or Passwords
+                // s_ap_start_event_count += 1;
+                // if(s_ap_start_event_count == 2) {
+                    ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_START");
+                    
+                    dq_i.data = DRIVER_WIFI_NOTIFICATION_APSTARTED;
+                    s_notify(&dq_i, 0);
+                // }
                 break;
 
             case WIFI_EVENT_AP_STACONNECTED: {
@@ -412,54 +420,6 @@ static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t
                 break;
         }
         
-        return;
-    }
-}
-
-static void s_event_handler_smartconfig(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
-{
-    // Smartconfig Event Handler
-
-    util_dataqueue_item_t dq_i;
-    dq_i.data_type = DATA_TYPE_NOTIFICATION;
-
-    if(event_base == SC_EVENT)
-    {
-        switch(event_id)
-        {
-            case SC_EVENT_SCAN_DONE:
-                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "SC_EVENT_SCAN_DONE");
-                break;
-            
-            case SC_EVENT_FOUND_CHANNEL:
-                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "SC_EVENT_FOUND_CHANNEL");
-                break;
-            
-            case SC_EVENT_GOT_SSID_PSWD:
-                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "SC_EVENT_GOT_SSID_PSWD");
-
-                smartconfig_event_got_ssid_pswd_t *evt = event_data;
-                memset(s_ssid, 0, DRIVER_WIFI_LEN_SSID_MAX);
-                memset(s_password, 0, DRIVER_WIFI_LEN_PWD_MAX);
-                memcpy(s_ssid, evt->ssid, DRIVER_WIFI_LEN_SSID_MAX);
-                memcpy(s_password, evt->password, DRIVER_WIFI_LEN_PWD_MAX);
-
-                // Send Notification
-                dq_i.data = DRIVER_WIFI_NOTIFICATION_SMARTCONFIG_GOT_CREDENTIALS;
-                s_notify(&dq_i, 0);
-                break;
-            
-            case SC_EVENT_SEND_ACK_DONE:
-                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "SC_EVENT_SEND_ACK_DONE");
-                
-                // Stop SmartConfig
-                esp_smartconfig_stop();
-                break;
-            
-            default:
-                break;
-        }
-
         return;
     }
 }

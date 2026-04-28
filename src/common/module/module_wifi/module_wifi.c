@@ -1,14 +1,29 @@
 // MODULE_WIFI
 // SEPTEMBER 6, 2025
 
+#include <string.h>
+#include <stdlib.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_timer.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "esp_http_server.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
 
 #include "module_wifi.h"
 #include "define_common_data_types.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
+
+// NVS
+#define NVS_NAMESPACE   "bambu_cfg"
+#define NVS_KEY_SSID    "ssid"
+#define NVS_KEY_PWD     "pwd"
+#define NVS_KEY_API_KEY "api_key"
 
 // Extern Variables
 TaskHandle_t handle_task_module_wifi;
@@ -23,13 +38,29 @@ static module_wifi_state_t s_wifi_credential_source;
 static rtos_component_type_t s_component_type;
 static esp_timer_handle_t s_wifi_timer_handle;
 static uint8_t s_wifi_retry_count;
+static TaskHandle_t s_dns_task_handle;
+static httpd_handle_t s_http_server;
+static volatile bool s_portal_connect_pending;
+static bool s_portal_ap_requested;
+static char s_html_buf[4096];
 
 // Local Functions
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
 static void s_state_set(module_wifi_state_t newstate);
 static void s_state_mainiter(void);
+static void s_nvs_read_str(const char* key, char* out, size_t out_len);
+static void s_nvs_write_str(const char* key, const char* val);
+static void s_url_decode(const char* in, char* out, size_t out_len);
+static void s_form_field(const char* body, const char* key, char* out, size_t out_len);
+static void s_captive_portal_start(void);
+static void s_captive_portal_stop(void);
+// Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
+static void s_dns_task(void *arg);
+static esp_err_t s_http_get_handler(httpd_req_t *req);
+static esp_err_t s_http_post_handler(httpd_req_t *req);
+static esp_err_t s_http_redirect_handler(httpd_req_t *req);
 
 // External Functions
 bool MODULE_WIFI_Init(void)
@@ -40,6 +71,11 @@ bool MODULE_WIFI_Init(void)
     s_state = -1;
     s_state_prev = -1;
     s_state_set(MODULE_WIFI_STATE_IDLE);
+
+    s_http_server = NULL;
+    s_dns_task_handle = NULL;
+    s_portal_connect_pending = false;
+    s_portal_ap_requested = false;
 
     // Create Data Queue
     UTIL_DATAQUEUE_Create(&s_dataqueue, MODULE_WIFI_DATAQUEUE_MAX);
@@ -80,7 +116,7 @@ bool MODULE_WIFI_AddCommand(util_dataqueue_item_t* dq_i)
 
         return false;
     }
-    
+
     return true;
 }
 
@@ -114,7 +150,7 @@ static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait)
 static void s_state_set(module_wifi_state_t newstate)
 {
     // Module Wifi Set State
-    
+
     if(s_state == newstate){
         return;
     }
@@ -128,9 +164,9 @@ static void s_state_set(module_wifi_state_t newstate)
 static void s_state_mainiter(void)
 {
     // State Mainiter
-    
+
     util_dataqueue_item_t dq_i;
-    
+
     switch(s_state)
     {
         case MODULE_WIFI_STATE_IDLE:
@@ -177,31 +213,41 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_SCAN:
             s_wifi_retry_count = 0;
+            s_portal_ap_requested = false;
             dq_i.data_type = DATA_TYPE_COMMAND;
             dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
             DRIVER_WIFI_AddCommand(&dq_i);
             s_state_set(MODULE_WIFI_STATE_SCANNING);
             break;
-        
+
         case MODULE_WIFI_STATE_SCANNING:
             // Do Nothing
             break;
-        
+
         case MODULE_WIFI_STATE_SCAN_DONE:
-            s_state_set(MODULE_WIFI_STATE_SMARTCONFIG);
+            s_state_set(MODULE_WIFI_STATE_CAPTIVE_PORTAL);
             break;
 
-        case MODULE_WIFI_STATE_SMARTCONFIG:
-            dq_i.data_type = DATA_TYPE_COMMAND;
-            dq_i.data = DRIVER_WIFI_COMMAND_SMARTCONFIG;
-            DRIVER_WIFI_AddCommand(&dq_i);
-            s_state_set(MODULE_WIFI_STATE_SMARTCONFIG_WAITING);
+        case MODULE_WIFI_STATE_CAPTIVE_PORTAL:
+            // Start AP broadcast once on entry
+            if(!s_portal_ap_requested) {
+                s_portal_ap_requested = true;
+                dq_i.data_type = DATA_TYPE_COMMAND;
+                dq_i.data = DRIVER_WIFI_COMMAND_AP_BROADCAST;
+                DRIVER_WIFI_AddCommand(&dq_i);
+            }
+
+            // Connect requested from portal form
+            if(s_portal_connect_pending) {
+                s_portal_connect_pending = false;
+                s_portal_ap_requested = false;
+                s_captive_portal_stop();
+                s_wifi_credential_source = MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS;
+                s_wifi_retry_count = MODULE_WIFI_WIFI_CONNECT_RETRY_MAX;
+                s_state_set(MODULE_WIFI_STATE_CONNECT);
+            }
             break;
-        
-            case MODULE_WIFI_STATE_SMARTCONFIG_WAITING:
-                // Do Nothing
-                break;
-        
+
         case MODULE_WIFI_STATE_CONNECT:
             dq_i.data_type = DATA_TYPE_COMMAND;
             dq_i.data = DRIVER_WIFI_COMMAND_CONNECT;
@@ -215,7 +261,7 @@ static void s_state_mainiter(void)
         case MODULE_WIFI_STATE_CONNECTING:
             // Do Nothing
             break;
-        
+
         case MODULE_WIFI_STATE_CONNECTED:
             // Do Nothing
             break;
@@ -227,7 +273,7 @@ static void s_state_mainiter(void)
             }
             s_state_set(MODULE_WIFI_STATE_IDLE);
             break;
-        
+
         case MODULE_WIFI_STATE_LOST_IP:
         case MODULE_WIFI_STATE_DISCONNECTED:
             // Lost IP
@@ -238,7 +284,7 @@ static void s_state_mainiter(void)
             }
             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
-        
+
             default:
                 break;
     }
@@ -259,7 +305,7 @@ static void s_task_function(void *pvParameters)
             if(UTIL_DATAQUEUE_MessageGet(&s_dataqueue, &dq_i, 0))
             {
                 ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "New In DataQueue. Type %u, Data %u", dq_i.data_type, dq_i.data);
-                
+
                 if(dq_i.data_type == DATA_TYPE_COMMAND)
                 {
                     switch(dq_i.data)
@@ -284,18 +330,14 @@ static void s_task_function(void *pvParameters)
                             s_state_set(MODULE_WIFI_STATE_SCAN_DONE);
                             break;
 
-                        case DRIVER_WIFI_NOTIFICATION_SMARTCONFIG_GOT_CREDENTIALS:
-                            s_state_set(MODULE_WIFI_STATE_CONNECT);
-                            break;
-                        
                         case DRIVER_WIFI_NOTIFICATION_CONNECTED:
                             s_state_set(MODULE_WIFI_STATE_CONNECTED);
                             break;
-                        
+
                         case DRIVER_WIFI_NOTIFICATION_GOT_IP:
                             s_state_set(MODULE_WIFI_STATE_GOT_IP);
                             break;
-                        
+
                         case DRIVER_WIFI_NOTIFICATION_LOST_IP:
                             // Ignore If Not In Idle State
                             if(s_state == MODULE_WIFI_STATE_IDLE){
@@ -309,7 +351,16 @@ static void s_task_function(void *pvParameters)
                                 s_state_set(MODULE_WIFI_STATE_DISCONNECTED);
                             }
                             break;
-                        
+
+                        case DRIVER_WIFI_NOTIFICATION_APSTARTED:
+                            // Start Captive Portal HTTP Server Once AP Is Up
+                            if(s_state == MODULE_WIFI_STATE_CAPTIVE_PORTAL){
+                                if(!s_portal_ap_requested){
+                                    s_captive_portal_start();
+                                }
+                            }
+                            break;
+
                         default:
                             break;
                     }
@@ -344,16 +395,329 @@ static void s_timer_cb(void *arg)
         case MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS:
             s_state_set(MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS);
             break;
-        
+
         case MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS:
             s_state_set(MODULE_WIFI_STATE_SCAN);
             break;
-        
-        case MODULE_WIFI_STATE_SMARTCONFIG:
-            break;
-        
+
         default:
             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
     }
+}
+
+static void s_dns_task(void *arg)
+{
+    // DNS Server Task
+    // Responds to all DNS queries with AP IP 192.168.4.1 to redirect clients to captive portal
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if(sock < 0) {
+        ESP_LOGE(DEBUG_TAG_MODULE_WIFI, "DNS socket failed");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    // Non-blocking recv so this task can be deleted cleanly
+    struct timeval timeout = { .tv_sec = 1, .tv_usec = 0 };
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    struct sockaddr_in addr = {
+        .sin_family      = AF_INET,
+        .sin_port        = htons(53),
+        .sin_addr.s_addr = htonl(INADDR_ANY)
+    };
+    if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        ESP_LOGE(DEBUG_TAG_MODULE_WIFI, "DNS bind failed");
+        close(sock);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "DNS server running on port 53");
+
+    uint8_t buf[256];
+    struct sockaddr_in client;
+    socklen_t client_len = sizeof(client);
+
+    while(true) {
+        int len = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr*)&client, &client_len);
+        if(len < 12) continue;
+
+        // Patch header: QR=1 (response), AA=1 (authoritative), RA=1, preserve RD
+        buf[2] = 0x84 | (buf[2] & 0x01);
+        buf[3] = 0x80; // RA=1; clients reject responses with RA=0
+        // NSCOUNT = 0, ARCOUNT = 0
+        buf[8] = 0x00; buf[9] = 0x00;
+        buf[10] = 0x00; buf[11] = 0x00;
+
+        // Find end of QNAME (skip labels until null terminator)
+        int qname_end = 12;
+        while(qname_end < len && buf[qname_end] != 0) qname_end += buf[qname_end] + 1;
+
+        // Read QTYPE (2 bytes after null terminator)
+        uint16_t qtype = ((uint16_t)buf[qname_end + 1] << 8) | buf[qname_end + 2];
+
+        // End of question section: null(1) + QTYPE(2) + QCLASS(2)
+        int pos = qname_end + 5;
+
+        if(qtype == 0x0001 && pos + 16 <= (int)sizeof(buf)) {
+            // TYPE A query: respond with A record for 192.168.4.1
+            buf[6] = 0x00; buf[7] = 0x01; // ANCOUNT = 1
+            buf[pos++] = 0xC0; buf[pos++] = 0x0C; // name pointer to offset 12
+            buf[pos++] = 0x00; buf[pos++] = 0x01; // TYPE A
+            buf[pos++] = 0x00; buf[pos++] = 0x01; // CLASS IN
+            buf[pos++] = 0x00; buf[pos++] = 0x00; buf[pos++] = 0x00; buf[pos++] = 0x3C; // TTL 60
+            buf[pos++] = 0x00; buf[pos++] = 0x04; // RDLENGTH
+            buf[pos++] = 192;  buf[pos++] = 168;  buf[pos++] = 4;   buf[pos++] = 1;
+        } else {
+            // AAAA or other types: NOERROR with 0 answers; client will retry with A
+            buf[6] = 0x00; buf[7] = 0x00; // ANCOUNT = 0
+        }
+
+        sendto(sock, buf, pos, 0, (struct sockaddr*)&client, client_len);
+    }
+
+    close(sock);
+    vTaskDelete(NULL);
+}
+
+static esp_err_t s_http_get_handler(httpd_req_t *req)
+{
+    // Serve Captive Portal Configuration Form
+
+    wifi_ap_record_t* records;
+    uint16_t count;
+    DRIVER_WIFI_GetScanResults(&records, &count);
+
+    char saved_ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
+    char saved_api_key[128] = {0};
+    s_nvs_read_str(NVS_KEY_SSID, saved_ssid, sizeof(saved_ssid));
+    s_nvs_read_str(NVS_KEY_API_KEY, saved_api_key, sizeof(saved_api_key));
+
+    // Build <option> tags from scan results
+    char options[512] = {0};
+    size_t opt_len = 0;
+    for(uint16_t i = 0; i < count && opt_len < sizeof(options) - 80; i++) {
+        const char* ssid = (const char*)records[i].ssid;
+        if(ssid[0] == '\0') continue;
+        bool selected = strcmp(ssid, saved_ssid) == 0;
+        opt_len += snprintf(options + opt_len, sizeof(options) - opt_len,
+            "<option value=\"%s\"%s>%s (%d dBm)</option>",
+            ssid, selected ? " selected" : "", ssid, records[i].rssi);
+    }
+
+    snprintf(s_html_buf, sizeof(s_html_buf),
+        "<!DOCTYPE html><html><head>"
+        "<meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>Bambu Watcher Setup</title>"
+        "<style>"
+        "body{font-family:sans-serif;max-width:420px;margin:40px auto;padding:0 16px}"
+        "h2{color:#1565C0}"
+        "label{display:block;margin-top:14px;font-weight:600;font-size:14px}"
+        "select,input{width:100%%;padding:8px;box-sizing:border-box;margin-top:4px;"
+                     "border:1px solid #ccc;border-radius:4px}"
+        "button{margin-top:24px;width:100%%;padding:12px;background:#1976D2;color:#fff;"
+               "border:none;border-radius:4px;font-size:16px;cursor:pointer}"
+        "button:hover{background:#1565C0}"
+        "</style></head><body>"
+        "<h2>Bambu Watcher Setup</h2>"
+        "<form method='POST' action='/save'>"
+        "<label>Wi-Fi Network</label>"
+        "<select name='ssid'>%s</select>"
+        "<label>Password</label>"
+        "<input type='password' name='pwd' placeholder='Leave blank to keep saved password'>"
+        "<label>Bambu API Key</label>"
+        "<input type='text' name='api_key' value='%s' placeholder='Enter API key'>"
+        "<button type='submit'>Save &amp; Connect</button>"
+        "</form></body></html>",
+        options, saved_api_key);
+
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, s_html_buf, strlen(s_html_buf));
+    return ESP_OK;
+}
+
+static esp_err_t s_http_post_handler(httpd_req_t *req)
+{
+    // Handle Form Submission - Save Config To NVS And Initiate Connection
+
+    char body[512] = {0};
+    int recv_len = req->content_len < (int)(sizeof(body) - 1) ? req->content_len : (int)(sizeof(body) - 1);
+    if(recv_len > 0) httpd_req_recv(req, body, recv_len);
+    body[recv_len] = '\0';
+
+    char ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
+    char pwd[DRIVER_WIFI_LEN_PWD_MAX] = {0};
+    char api_key[128] = {0};
+
+    s_form_field(body, "ssid", ssid, sizeof(ssid));
+    s_form_field(body, "pwd", pwd, sizeof(pwd));
+    s_form_field(body, "api_key", api_key, sizeof(api_key));
+
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Portal save: SSID=%s", ssid);
+
+    // Keep saved password if field was left blank
+    if(pwd[0] == '\0') s_nvs_read_str(NVS_KEY_PWD, pwd, sizeof(pwd));
+
+    // Persist To NVS
+    s_nvs_write_str(NVS_KEY_SSID, ssid);
+    s_nvs_write_str(NVS_KEY_PWD, pwd);
+    s_nvs_write_str(NVS_KEY_API_KEY, api_key);
+
+    // Load Into Driver And Signal State Machine To Connect
+    DRIVER_WIFI_SetWifiCredentials((uint8_t*)ssid, (uint8_t*)pwd);
+    s_portal_connect_pending = true;
+
+    const char* resp =
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Saved</title>"
+        "<style>body{font-family:sans-serif;text-align:center;margin-top:80px}</style>"
+        "</head><body>"
+        "<h2>Saved! Connecting...</h2>"
+        "<p>The device will now attempt to connect to Wi-Fi.</p>"
+        "</body></html>";
+
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, resp, strlen(resp));
+    return ESP_OK;
+}
+
+static esp_err_t s_http_redirect_handler(httpd_req_t *req)
+{
+    // Redirect Captive Portal Detection URIs To Setup Page
+
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+static void s_captive_portal_start(void)
+{
+    // Start HTTP Server And DNS Hijack For Captive Portal
+
+    if(s_http_server != NULL) return;
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.lru_purge_enable = true;
+    config.stack_size = 8192;
+
+    if(httpd_start(&s_http_server, &config) != ESP_OK) {
+        ESP_LOGE(DEBUG_TAG_MODULE_WIFI, "HTTP server start failed");
+        return;
+    }
+
+    static const httpd_uri_t uri_root = {
+        .uri = "/", .method = HTTP_GET, .handler = s_http_get_handler
+    };
+    static const httpd_uri_t uri_save = {
+        .uri = "/save", .method = HTTP_POST, .handler = s_http_post_handler
+    };
+    static const httpd_uri_t uri_g204 = {
+        .uri = "/generate_204", .method = HTTP_GET, .handler = s_http_redirect_handler
+    };
+    static const httpd_uri_t uri_hotspot = {
+        .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = s_http_redirect_handler
+    };
+    static const httpd_uri_t uri_ncsi = {
+        .uri = "/ncsi.txt", .method = HTTP_GET, .handler = s_http_redirect_handler
+    };
+    static const httpd_uri_t uri_fwlink = {
+        .uri = "/fwlink", .method = HTTP_GET, .handler = s_http_redirect_handler
+    };
+
+    httpd_register_uri_handler(s_http_server, &uri_root);
+    httpd_register_uri_handler(s_http_server, &uri_save);
+    httpd_register_uri_handler(s_http_server, &uri_g204);
+    httpd_register_uri_handler(s_http_server, &uri_hotspot);
+    httpd_register_uri_handler(s_http_server, &uri_ncsi);
+    httpd_register_uri_handler(s_http_server, &uri_fwlink);
+
+    xTaskCreate(
+        s_dns_task,
+        "t-dns",
+        4096,
+        NULL,
+        TASK_PRIORITY_MODULE_WIFI,
+        &s_dns_task_handle
+    );
+
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal started at http://192.168.4.1/");
+}
+
+static void s_captive_portal_stop(void)
+{
+    // Stop HTTP Server And DNS Task
+
+    if(s_http_server != NULL) {
+        httpd_stop(s_http_server);
+        s_http_server = NULL;
+    }
+    if(s_dns_task_handle != NULL) {
+        vTaskDelete(s_dns_task_handle);
+        s_dns_task_handle = NULL;
+    }
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal stopped");
+}
+
+static void s_nvs_read_str(const char* key, char* out, size_t out_len)
+{
+    // Read String From NVS; leaves out[0]='\0' on miss or error
+
+    nvs_handle_t h;
+    out[0] = '\0';
+    if(nvs_open(NVS_NAMESPACE, NVS_READONLY, &h) != ESP_OK) return;
+    size_t len = out_len;
+    if(nvs_get_str(h, key, out, &len) != ESP_OK) out[0] = '\0';
+    nvs_close(h);
+}
+
+static void s_nvs_write_str(const char* key, const char* val)
+{
+    // Write String To NVS
+
+    nvs_handle_t h;
+    if(nvs_open(NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_str(h, key, val);
+    nvs_commit(h);
+    nvs_close(h);
+}
+
+static void s_url_decode(const char* in, char* out, size_t out_len)
+{
+    // Decode URL-encoded String (application/x-www-form-urlencoded)
+
+    size_t i = 0, j = 0;
+    while(in[i] && j < out_len - 1) {
+        if(in[i] == '%' && in[i+1] && in[i+2]) {
+            char hex[3] = {in[i+1], in[i+2], '\0'};
+            out[j++] = (char)strtol(hex, NULL, 16);
+            i += 3;
+        } else if(in[i] == '+') {
+            out[j++] = ' ';
+            i++;
+        } else {
+            out[j++] = in[i++];
+        }
+    }
+    out[j] = '\0';
+}
+
+static void s_form_field(const char* body, const char* key, char* out, size_t out_len)
+{
+    // Extract And Decode A Field From URL-encoded Form Body
+
+    char search[64];
+    snprintf(search, sizeof(search), "%s=", key);
+    const char* p = strstr(body, search);
+    if(!p) { out[0] = '\0'; return; }
+    p += strlen(search);
+
+    char encoded[256] = {0};
+    size_t i = 0;
+    while(*p && *p != '&' && i < sizeof(encoded) - 1) encoded[i++] = *p++;
+    encoded[i] = '\0';
+
+    s_url_decode(encoded, out, out_len);
 }
