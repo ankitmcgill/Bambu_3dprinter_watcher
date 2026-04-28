@@ -21,10 +21,13 @@
 #include "project_defines.h"
 
 // NVS
-#define NVS_NAMESPACE   "bambu_cfg"
-#define NVS_KEY_SSID    "ssid"
-#define NVS_KEY_PWD     "pwd"
-#define NVS_KEY_API_KEY "api_key"
+#define NVS_NAMESPACE       "bambu_cfg"
+#define NVS_KEY_SSID        "ssid"
+#define NVS_KEY_PWD         "pwd"
+#define NVS_KEY_API_KEY     "api_key"
+#define NVS_KEY_USER_ID     "user_id"
+#define NVS_KEY_DEVICE_ID   "device_id"
+#define NVS_KEY_REGION      "region"
 
 // Extern Variables
 TaskHandle_t handle_task_module_wifi;
@@ -489,8 +492,14 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
 
     char saved_ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
     char saved_api_key[128] = {0};
+    char saved_user_id[64] = {0};
+    char saved_device_id[64] = {0};
+    char saved_region[16] = {0};
     s_nvs_read_str(NVS_KEY_SSID, saved_ssid, sizeof(saved_ssid));
     s_nvs_read_str(NVS_KEY_API_KEY, saved_api_key, sizeof(saved_api_key));
+    s_nvs_read_str(NVS_KEY_USER_ID, saved_user_id, sizeof(saved_user_id));
+    s_nvs_read_str(NVS_KEY_DEVICE_ID, saved_device_id, sizeof(saved_device_id));
+    s_nvs_read_str(NVS_KEY_REGION, saved_region, sizeof(saved_region));
 
     // Build <option> tags from scan results
     char options[512] = {0};
@@ -503,6 +512,11 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
             "<option value=\"%s\"%s>%s (%d dBm)</option>",
             ssid, selected ? " selected" : "", ssid, records[i].rssi);
     }
+
+    // Region selected attributes
+    bool region_china = strcmp(saved_region, "china") == 0;
+    const char* sel_global = region_china ? "" : " selected";
+    const char* sel_china  = region_china ? " selected" : "";
 
     snprintf(s_html_buf, sizeof(s_html_buf),
         "<!DOCTYPE html><html><head>"
@@ -524,12 +538,21 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
         "<label>Wi-Fi Network</label>"
         "<select name='ssid'>%s</select>"
         "<label>Password</label>"
-        "<input type='text' name='pwd' placeholder='Leave blank to keep saved password'>"
+        "<input type='password' name='pwd' placeholder='Leave blank to keep saved password'>"
         "<label>Bambu API Key</label>"
         "<input type='text' name='api_key' value='%s' placeholder='Enter API key'>"
+        "<label>Bambu User ID</label>"
+        "<input type='text' name='user_id' value='%s' placeholder='Enter user ID'>"
+        "<label>Bambu Device ID</label>"
+        "<input type='text' name='device_id' value='%s' placeholder='Enter device ID'>"
+        "<label>Bambu Region</label>"
+        "<select name='region'>"
+        "<option value='global'%s>Global</option>"
+        "<option value='china'%s>China</option>"
+        "</select>"
         "<button type='submit'>Save &amp; Connect</button>"
         "</form></body></html>",
-        options, saved_api_key);
+        options, saved_api_key, saved_user_id, saved_device_id, sel_global, sel_china);
 
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, s_html_buf, strlen(s_html_buf));
@@ -540,7 +563,7 @@ static esp_err_t s_http_post_handler(httpd_req_t *req)
 {
     // Handle Form Submission - Save Config To NVS And Initiate Connection
 
-    char body[512] = {0};
+    char body[1024] = {0};
     int recv_len = req->content_len < (int)(sizeof(body) - 1) ? req->content_len : (int)(sizeof(body) - 1);
     if(recv_len > 0) httpd_req_recv(req, body, recv_len);
     body[recv_len] = '\0';
@@ -548,12 +571,18 @@ static esp_err_t s_http_post_handler(httpd_req_t *req)
     char ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
     char pwd[DRIVER_WIFI_LEN_PWD_MAX] = {0};
     char api_key[128] = {0};
+    char user_id[64] = {0};
+    char device_id[64] = {0};
+    char region[16] = {0};
 
     s_form_field(body, "ssid", ssid, sizeof(ssid));
     s_form_field(body, "pwd", pwd, sizeof(pwd));
     s_form_field(body, "api_key", api_key, sizeof(api_key));
+    s_form_field(body, "user_id", user_id, sizeof(user_id));
+    s_form_field(body, "device_id", device_id, sizeof(device_id));
+    s_form_field(body, "region", region, sizeof(region));
 
-    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Portal save: SSID=%s", ssid);
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Portal save: SSID=%s region=%s", ssid, region);
 
     // Keep saved password if field was left blank
     if(pwd[0] == '\0') s_nvs_read_str(NVS_KEY_PWD, pwd, sizeof(pwd));
@@ -562,6 +591,9 @@ static esp_err_t s_http_post_handler(httpd_req_t *req)
     s_nvs_write_str(NVS_KEY_SSID, ssid);
     s_nvs_write_str(NVS_KEY_PWD, pwd);
     s_nvs_write_str(NVS_KEY_API_KEY, api_key);
+    s_nvs_write_str(NVS_KEY_USER_ID, user_id);
+    s_nvs_write_str(NVS_KEY_DEVICE_ID, device_id);
+    s_nvs_write_str(NVS_KEY_REGION, region);
 
     // Load Into Driver And Signal State Machine To Connect
     DRIVER_WIFI_SetWifiCredentials((uint8_t*)ssid, (uint8_t*)pwd);
