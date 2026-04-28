@@ -31,6 +31,7 @@ static wifi_ap_record_t* s_scan_ap_records;
 // Local Functions
 static void s_wifi_connect(void);
 static void s_wifi_disconnect(void);
+static void s_wifi_ap_broadcast(void);
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
 static void s_task_function(void *pvParameters);
 static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
@@ -201,6 +202,36 @@ static void s_wifi_disconnect(void)
     esp_wifi_disconnect();
 }
 
+static void s_wifi_ap_broadcast(void)
+{
+    // Start AP Mode
+    // SSID: Bambu_Watcher, open (no security), channel 1, max 4 stations
+
+    static bool s_ap_netif_created = false;
+
+    wifi_config_t ap_config = {
+        .ap = {
+            .ssid            = "Bambu_Watcher",
+            .ssid_len        = 0,
+            .channel         = 1,
+            .authmode        = WIFI_AUTH_OPEN,
+            .ssid_hidden     = 0,
+            .max_connection  = 4,
+            .beacon_interval = 100,
+        }
+    };
+
+    ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "Starting AP: Bambu_Watcher");
+
+    if (!s_ap_netif_created) {
+        esp_netif_create_default_wifi_ap();
+        s_ap_netif_created = true;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
+}
+
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait)
 {
     // Send Notification
@@ -247,11 +278,6 @@ static void s_task_function(void *pvParameters)
                             ESP_ERROR_CHECK(esp_wifi_scan_start(&wifi_scan_config, false));
                             break;
 
-                        case DRIVER_WIFI_COMMAND_SMARTCONFIG:
-                            smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
-                            ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
-                            break;
-
                         case DRIVER_WIFI_COMMAND_CONNECT:
                             s_wifi_connect();
                             break;
@@ -259,7 +285,11 @@ static void s_task_function(void *pvParameters)
                         case DRIVER_WIFI_COMMAND_DISCONNECT:
                             s_wifi_disconnect();
                             break;
-                        
+
+                        case DRIVER_WIFI_COMMAND_AP_BROADCAST:
+                            s_wifi_ap_broadcast();
+                            break;
+
                         default:
                             break;
                     }
@@ -307,6 +337,25 @@ static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t
                 s_notify(&dq_i, 0);
                 break;
             
+            case WIFI_EVENT_AP_START:
+                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_START");
+
+                dq_i.data = DRIVER_WIFI_NOTIFICATION_APSTARTED;
+                s_notify(&dq_i, 0);
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *ap_conn = event_data;
+                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_STACONNECTED: MAC " MACSTR, MAC2STR(ap_conn->mac));
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *ap_disconn = event_data;
+                ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_STADISCONNECTED: MAC " MACSTR, MAC2STR(ap_disconn->mac));
+                break;
+            }
+
             case WIFI_EVENT_SCAN_DONE:
                 ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_SCAN_DONE");
 
