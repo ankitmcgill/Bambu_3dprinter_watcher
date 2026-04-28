@@ -266,6 +266,14 @@ static void s_state_mainiter(void)
                 ESP_ERROR_CHECK(esp_timer_stop(s_wifi_timer_handle));
             }
             s_state_set(MODULE_WIFI_STATE_IDLE);
+
+            // Switch Screen To Home
+            // After 2 Second Delay
+            vTaskDelay(pdMS_TO_TICKS(4000));
+            dq_i.data_type = DATA_TYPE_COMMAND;
+            dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
+            dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
+            DRIVER_LCD_AddCommand(&dq_i);
             break;
 
         case MODULE_WIFI_STATE_LOST_IP:

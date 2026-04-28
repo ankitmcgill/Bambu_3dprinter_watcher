@@ -12,6 +12,7 @@
 #include "driver_appinfo.h"
 #include "driver_lcd.h"
 #include "driver_wifi.h"
+#include "driver_mqtt.h"
 #include "module_wifi.h"
 #include "util_dataqueue.h"
 #include "define_rtos_tasks.h"
@@ -91,10 +92,14 @@ void app_main(void)
     dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_STARTUP;
     DRIVER_LCD_AddCommand(&dq_i);
 
-    // Intialize NEtwork
+    // Intialize Network
     DRIVER_WIFI_Init();
     MODULE_WIFI_Init();
 
+    // Initialize MQTT Stack
+    DRIVER_MQTT_Init();
+
+    // Start Network Stack
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = MODULE_WIFI_COMMAND_CONNECT;
     MODULE_WIFI_AddCommand(&dq_i);

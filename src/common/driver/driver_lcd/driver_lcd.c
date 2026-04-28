@@ -292,6 +292,13 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelSTATUS, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
                         default:
                             break;
                     }

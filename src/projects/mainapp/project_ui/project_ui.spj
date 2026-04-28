@@ -1995,7 +1995,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "55 C",
+                                "strval": " ",
                                 "InheritedType": 10
                               },
                               {
@@ -2197,7 +2197,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "60 C",
+                                "strval": "",
                                 "InheritedType": 10
                               },
                               {
@@ -3185,9 +3185,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -3806,7 +3811,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "200 C",
+                                "strval": "",
                                 "InheritedType": 10
                               },
                               {
@@ -4008,7 +4013,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "210 C",
+                                "strval": "",
                                 "InheritedType": 10
                               },
                               {
@@ -4996,9 +5001,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -5623,7 +5633,6 @@
                           {
                             "nid": 1030,
                             "strtype": "BAR/Value",
-                            "integer": 25,
                             "InheritedType": 6
                           },
                           {
@@ -5833,7 +5842,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "25% Complete",
+                            "strval": "% Complete",
                             "InheritedType": 10
                           },
                           {
@@ -6106,9 +6115,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -6725,7 +6739,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "145",
+                                "strval": "",
                                 "InheritedType": 10
                               },
                               {
@@ -6927,7 +6941,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "210",
+                                "strval": "",
                                 "InheritedType": 10
                               },
                               {
@@ -7915,9 +7929,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -8531,7 +8550,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "02:31:27",
+                            "strval": "",
                             "InheritedType": 10
                           },
                           {
@@ -8958,9 +8977,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -9384,7 +9408,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "PRINTING",
+                            "strval": "",
                             "InheritedType": 10
                           },
                           {
@@ -9668,9 +9692,14 @@
                   },
                   {
                     "nid": 90,
-                    "flags": 1048576,
                     "strtype": "OBJECT/Flags",
                     "InheritedType": 1
+                  },
+                  {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
                   },
                   {
                     "nid": 225,
@@ -10084,7 +10113,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 81,
+    "backup_cnt": 87,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
