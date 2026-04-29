@@ -7,7 +7,6 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
-#include "cJSON.h"
 #include "esp_crt_bundle.h"
 
 #include "driver_mqtt.h"
@@ -31,7 +30,6 @@ static char s_password[DRIVER_MQTT_PASSWORD_LEN_MAX];
 
 // Local Functions
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
-static driver_mqtt_gcode_state_t s_parse_gcode_state(const char* str);
 static void s_task_function(void *pvParameters);
 
 // Callbacks
@@ -134,19 +132,6 @@ static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait)
     }
 
     return true;
-}
-
-static driver_mqtt_gcode_state_t s_parse_gcode_state(const char* str)
-{
-    // Map Gcode State String To Enum
-
-    if(strcmp(str, "IDLE")    == 0) return DRIVER_MQTT_GCODE_STATE_IDLE;
-    if(strcmp(str, "RUNNING") == 0) return DRIVER_MQTT_GCODE_STATE_RUNNING;
-    if(strcmp(str, "PAUSE")   == 0) return DRIVER_MQTT_GCODE_STATE_PAUSE;
-    if(strcmp(str, "FAILED")  == 0) return DRIVER_MQTT_GCODE_STATE_FAILED;
-    if(strcmp(str, "FINISH")  == 0) return DRIVER_MQTT_GCODE_STATE_FINISH;
-
-    return DRIVER_MQTT_GCODE_STATE_UNKNOWN;
 }
 
 static void s_task_function(void *pvParameters)
@@ -253,35 +238,16 @@ static void s_event_handler_mqtt(void* arg, esp_event_base_t event_base, int32_t
         case MQTT_EVENT_DATA: {
             if(event->data_len <= 0) break;
 
-            // Null-terminate the received data for cJSON parsing
-            char* payload = malloc(event->data_len + 1);
-            if(!payload) break;
-            memcpy(payload, event->data, event->data_len);
-            payload[event->data_len] = '\0';
+            int copy_len = event->data_len < (int)(sizeof(dq_i.data_buff.value.mqtt_data) - 1)
+                ? event->data_len
+                : (int)(sizeof(dq_i.data_buff.value.mqtt_data) - 1);
+            memcpy(dq_i.data_buff.value.mqtt_data, event->data, copy_len);
+            dq_i.data_buff.value.mqtt_data[copy_len] = '\0';
 
-            cJSON* root = cJSON_Parse(payload);
-            free(payload);
+            ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "MQTT_EVENT_DATA (%d bytes)", event->data_len);
 
-            if(!root) break;
-
-            // Navigate root -> "print" -> "gcode_state"
-            cJSON* print = cJSON_GetObjectItem(root, "print");
-            if(print)
-            {
-                cJSON* gcode_state = cJSON_GetObjectItem(print, "gcode_state");
-                if(cJSON_IsString(gcode_state) && gcode_state->valuestring)
-                {
-                    driver_mqtt_gcode_state_t state = s_parse_gcode_state(gcode_state->valuestring);
-
-                    ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "gcode_state: %s (%u)", gcode_state->valuestring, state);
-
-                    dq_i.data = DRIVER_MQTT_NOTIFICATION_GCODE_STATE;
-                    dq_i.data_buff.value.uint8 = (uint8_t)state;
-                    s_notify(&dq_i, 0);
-                }
-            }
-
-            cJSON_Delete(root);
+            dq_i.data = DRIVER_MQTT_NOTIFICATION_DATA_RECEIVED;
+            s_notify(&dq_i, 0);
             break;
         }
 

@@ -264,12 +264,13 @@ static void s_task_function(void *pvParameters)
                             s_state_set(MODULE_MQTT_STATE_DISCONNECTED);
                             break;
 
-                        case DRIVER_MQTT_NOTIFICATION_GCODE_STATE: {
+                        case DRIVER_MQTT_NOTIFICATION_DATA_RECEIVED: {
                             util_dataqueue_item_t out = {
                                 .data_type = DATA_TYPE_NOTIFICATION,
                                 .data      = MODULE_MQTT_NOTIFICATION_DATA_RECEIVED,
                             };
-                            out.data_buff.value.uint8 = s_dq_i.data_buff.value.uint8;
+                            memcpy(out.data_buff.value.mqtt_data, s_dq_i.data_buff.value.mqtt_data,
+                                   sizeof(out.data_buff.value.mqtt_data));
                             s_notify(&out, 0);
                             break;
                         }

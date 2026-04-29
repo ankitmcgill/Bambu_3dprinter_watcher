@@ -4,7 +4,6 @@ idf_component_register(SRCS "driver_mqtt.c"
                             util_dataqueue
                             defines
                             mqtt
-                            json
                             esp-tls
                        REQUIRES
                             freertos
