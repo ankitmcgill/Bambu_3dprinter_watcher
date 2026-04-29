@@ -1,6 +1,7 @@
 // DRIVER_WIFI
 // SEPTEMBER 6, 2025
 
+#include <stdlib.h>
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_smartconfig.h"
@@ -143,6 +144,15 @@ void DRIVER_WIFI_GetScanResults(wifi_ap_record_t** records, uint16_t* count)
 {
     *records = s_scan_ap_records;
     *count   = s_scan_ap_count;
+}
+
+void DRIVER_WIFI_FreeScanResults(void)
+{
+    if(s_scan_ap_records != NULL){
+        free(s_scan_ap_records);
+        s_scan_ap_records = NULL;
+        s_scan_ap_count = 0;
+    }
 }
 
 bool DRIVER_WIFI_AddCommand(util_dataqueue_item_t* dq_i)

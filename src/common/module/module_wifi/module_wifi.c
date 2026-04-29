@@ -199,7 +199,7 @@ static void s_state_mainiter(void)
         case MODULE_WIFI_STATE_AP:
             if(s_state_prev != s_state){
                 dq_i.data_type = DATA_TYPE_COMMAND;
-                dq_i.data = DRIVER_WIFI_COMMAND_AP_BROADCAST;
+                dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
                 DRIVER_WIFI_AddCommand(&dq_i);
                 s_state_prev = s_state;
             }
@@ -246,29 +246,8 @@ static void s_state_mainiter(void)
                     break;
             #endif
 
-            // No Default Credentials
-            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Default Wi-Fi\nCredential Found");
-            s_state_set(MODULE_WIFI_STATE_SCAN);
-            break;
-
-        case MODULE_WIFI_STATE_SCAN:
-            s_wifi_retry_count = 0;
-            dq_i.data_type = DATA_TYPE_NOTIFICATION;
-            dq_i.data = MODULE_WIFI_NOTIFICATION_SCANNING;
-            s_notify(&dq_i, 0);
-            
-            dq_i.data_type = DATA_TYPE_COMMAND;
-            dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
-            DRIVER_WIFI_AddCommand(&dq_i);
-            s_state_set(MODULE_WIFI_STATE_SCANNING);
-            break;
-
-        case MODULE_WIFI_STATE_SCANNING:
-            // Do Nothing
-            break;
-
-        case MODULE_WIFI_STATE_SCAN_DONE:
-            // Restart Connection Logic
+            // No Credentials Found - Retry
+            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Default Wi-Fi Credential Found");
             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
 
@@ -358,7 +337,12 @@ static void s_task_function(void *pvParameters)
                     switch(s_dq_i.data)
                     {
                         case DRIVER_WIFI_NOTIFICATION_SCAN_DONE:
-                            s_state_set(MODULE_WIFI_STATE_SCAN_DONE);
+                            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Scan done");
+                            if(s_state == MODULE_WIFI_STATE_AP){
+                                s_dq_i.data_type = DATA_TYPE_COMMAND;
+                                s_dq_i.data = DRIVER_WIFI_COMMAND_AP_BROADCAST;
+                                DRIVER_WIFI_AddCommand(&s_dq_i);
+                            }
                             break;
 
                         case DRIVER_WIFI_NOTIFICATION_CONNECTED:
@@ -465,7 +449,7 @@ static void s_timer_cb(void *arg)
             break;
 
         case MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS:
-            s_state_set(MODULE_WIFI_STATE_SCAN);
+            s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
 
         default:
@@ -796,6 +780,8 @@ static void s_captive_portal_stop(void)
         httpd_stop(s_http_server);
         s_http_server = NULL;
     }
+
+    DRIVER_WIFI_FreeScanResults();
 
     if(s_html_buf != NULL){
         free(s_html_buf);

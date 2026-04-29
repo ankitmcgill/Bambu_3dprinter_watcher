@@ -156,11 +156,6 @@ void app_main(void)
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Default Credentials");
                             break;
 
-                        case MODULE_WIFI_NOTIFICATION_SCANNING:
-                            s_set_screen2_message("WiFi Scanning");
-                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Scanning");
-                            break;
-
                         case MODULE_WIFI_NOTIFICATION_CONNECTED:
                             s_set_screen2_message("Connected To\nWiFi");
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Connected");

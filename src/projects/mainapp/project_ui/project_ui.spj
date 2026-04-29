@@ -305,7 +305,7 @@
                   {
                     "nid": 1030,
                     "strtype": "LABEL/Text",
-                    "strval": "",
+                    "strval": "Scanning Available\\nWiFi",
                     "InheritedType": 10
                   },
                   {
@@ -10220,7 +10220,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 95,
+    "backup_cnt": 96,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
