@@ -12,6 +12,7 @@
 #include "esp_check.h"
 #include "esp_idf_version.h"
 #include "driver/spi_master.h"
+#include "driver/ledc.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
@@ -42,6 +43,7 @@ static esp_timer_handle_t s_timer_one_second;
 static esp_lcd_panel_io_handle_t s_io_handle;
 static esp_lcd_panel_handle_t s_panel_handle;
 static lv_display_t* s_lvgl_display;
+static uint8_t* s_rgb666_buf;
 static volatile bool s_update_seconds;
 
 // Local Functions
@@ -98,19 +100,32 @@ bool DRIVER_LCD_AddCommand(util_dataqueue_item_t* dq_i)
 static bool s_lcd_panel_setup(void)
 {
     // Initialize LCD Panel
-    // 170 x 320 pixel, RGB565 16-bit
-    // ST7789 controller, SPI interface
-    // ST7789 chip RAM is 240 columns wide; a 170-wide panel sits at column offset 35
+    // 240 x 320 pixel, RGB666 18-bit
+    // ST7789T3 controller, SPI interface
+    // Waveshare ESP32-S3 2.8inch Display Development Board, 240×320
+    // https://www.waveshare.com/product/esp32-s3-touch-lcd-2.8.htm
 
     esp_err_t ret;
 
-    // Backlight off during init
-    gpio_config_t bl_cfg = {
-        .pin_bit_mask = BIT64(BSP_LCD_GPIO_BL),
-        .mode         = GPIO_MODE_OUTPUT,
+    // Backlight via LEDC PWM — start at 0% duty during init
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode      = DRIVER_LCD_LEDC_MODE,
+        .duty_resolution = DRIVER_LCD_LEDC_RESOLUTION,
+        .timer_num       = DRIVER_LCD_LEDC_TIMER,
+        .freq_hz         = DRIVER_LCD_LEDC_FREQ_HZ,
+        .clk_cfg         = LEDC_AUTO_CLK,
     };
-    ESP_ERROR_CHECK(gpio_config(&bl_cfg));
-    gpio_set_level(BSP_LCD_GPIO_BL, 0);
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+    ledc_channel_config_t ledc_channel = {
+        .gpio_num   = BSP_LCD_GPIO_BL,
+        .speed_mode = DRIVER_LCD_LEDC_MODE,
+        .channel    = DRIVER_LCD_LEDC_CHANNEL,
+        .timer_sel  = DRIVER_LCD_LEDC_TIMER,
+        .duty       = 0,
+        .hpoint     = 0,
+    };
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 
     // SPI Bus
     spi_bus_config_t bus_cfg = {
@@ -119,7 +134,7 @@ static bool s_lcd_panel_setup(void)
         .sclk_io_num     = BSP_LCD_GPIO_SCK,
         .quadwp_io_num   = -1,
         .quadhd_io_num   = -1,
-        .max_transfer_sz = DRIVER_LCD_DISPLAY_HRES * DRIVER_LCD_DISPLAY_VRES * sizeof(uint16_t),
+        .max_transfer_sz = DRIVER_LCD_DISPLAY_HRES * DRIVER_LCD_DISPLAY_VRES * 3,
     };
     ret = spi_bus_initialize(DRIVER_LCD_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO);
     ESP_GOTO_ON_ERROR(ret, err, DEBUG_TAG_DRIVER_LCD, "SPI bus init failed");
@@ -140,11 +155,11 @@ static bool s_lcd_panel_setup(void)
     ret = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)DRIVER_LCD_SPI_HOST, &io_cfg, &s_io_handle);
     ESP_GOTO_ON_ERROR(ret, err, DEBUG_TAG_DRIVER_LCD, "Panel IO init failed");
 
-    // ST7789 Panel Device
+    // ST7789T3 Panel Device — 18-bit RGB666 mode
     esp_lcd_panel_dev_config_t panel_cfg = {
         .reset_gpio_num = BSP_LCD_GPIO_RST,
         .rgb_endian     = LCD_RGB_ENDIAN_RGB,
-        .bits_per_pixel = 16,
+        .bits_per_pixel = 18,
     };
     ret = esp_lcd_new_panel_st7789(s_io_handle, &panel_cfg, &s_panel_handle);
     ESP_GOTO_ON_ERROR(ret, err, DEBUG_TAG_DRIVER_LCD, "ST7789 panel init failed");
@@ -153,12 +168,13 @@ static bool s_lcd_panel_setup(void)
     ESP_ERROR_CHECK(esp_lcd_panel_reset(s_panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(s_panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(s_panel_handle, true));
-    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(s_panel_handle, 35, 0));
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(s_panel_handle, 0, 0));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(s_panel_handle, false, false));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(s_panel_handle, true));
 
-    // Enable backlight
-    gpio_set_level(BSP_LCD_GPIO_BL, 1);
+    // Enable backlight at full brightness
+    ESP_ERROR_CHECK(ledc_set_duty(DRIVER_LCD_LEDC_MODE, DRIVER_LCD_LEDC_CHANNEL, DRIVER_LCD_LEDC_DUTY_MAX));
+    ESP_ERROR_CHECK(ledc_update_duty(DRIVER_LCD_LEDC_MODE, DRIVER_LCD_LEDC_CHANNEL));
 
     ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "LCD Panel Setup OK");
     return true;
@@ -178,16 +194,23 @@ static bool s_lcd_flush_ready_cb(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pan
 
 static void s_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
-    // ST7789 expects big-endian RGB565 over SPI; ESP32 renders little-endian.
-    // Swap the two bytes of every pixel before the DMA transfer.
+    // LVGL renders RGB565; ST7789T3 operates in 18-bit RGB666 mode.
+    // Expand each 16-bit RGB565 pixel to 3 bytes (RRRRRR00, GGGGGG00, BBBBBB00).
     uint32_t pixel_count = (area->x2 - area->x1 + 1) * (area->y2 - area->y1 + 1);
-    uint16_t *buf = (uint16_t *)px_map;
+    const uint16_t *src = (const uint16_t *)px_map;
+    uint8_t *dst = s_rgb666_buf;
     for(uint32_t i = 0; i < pixel_count; i++){
-        buf[i] = (buf[i] >> 8) | (buf[i] << 8);
+        uint16_t px = src[i];
+        uint8_t r5 = (px >> 11) & 0x1F;
+        uint8_t g6 = (px >> 5)  & 0x3F;
+        uint8_t b5 =  px        & 0x1F;
+        *dst++ = ((r5 << 1) | (r5 >> 4)) << 2;
+        *dst++ = g6 << 2;
+        *dst++ = ((b5 << 1) | (b5 >> 4)) << 2;
     }
 
     // lv_display_flush_ready is called from s_lcd_flush_ready_cb once DMA completes
-    esp_lcd_panel_draw_bitmap(s_panel_handle, area->x1, area->y1, area->x2 + 1, area->y2 + 1, px_map);
+    esp_lcd_panel_draw_bitmap(s_panel_handle, area->x1, area->y1, area->x2 + 1, area->y2 + 1, s_rgb666_buf);
 }
 
 static bool s_lvgl_setup(void)
@@ -203,6 +226,9 @@ static bool s_lvgl_setup(void)
     assert(buf1);
     void* buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     assert(buf2);
+
+    s_rgb666_buf = heap_caps_malloc(100 * DRIVER_LCD_DISPLAY_HRES * 3, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    assert(s_rgb666_buf);
 
     s_lvgl_display = lv_display_create(DRIVER_LCD_DISPLAY_HRES, DRIVER_LCD_DISPLAY_VRES);
     assert(s_lvgl_display);
