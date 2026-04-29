@@ -29,6 +29,7 @@
 // Task Debug Tag
 #define DEBUG_TAG_DRIVER_CHIPINFO       ("D.ChipInfo")
 #define DEBUG_TAG_DRIVER_APPINFO        ("D.AppInfo")
+#define DEBUG_TAG_DRIVER_NVS            ("D.Nvs")
 #define DEBUG_TAG_DRIVER_WIFI           ("D.Wifi")
 #define DEBUG_TAG_DRIVER_MQTT           ("D.Mqtt")
 #define DEBUG_TAG_DRIVER_LCD            ("D.Lcd_Lvgl")
