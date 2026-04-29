@@ -14,6 +14,7 @@
 #include "driver_wifi.h"
 #include "driver_mqtt.h"
 #include "module_wifi.h"
+#include "module_mqtt.h"
 #include "util_dataqueue.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
@@ -105,6 +106,7 @@ void app_main(void)
 
     // Initialize MQTT Stack
     DRIVER_MQTT_Init();
+    MODULE_MQTT_Init();
 
     // Start Network Stack
     dq_i.data_type = DATA_TYPE_COMMAND;

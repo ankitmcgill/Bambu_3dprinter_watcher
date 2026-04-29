@@ -6,6 +6,7 @@ idf_component_register(SRCS "main.c"
                             driver_wifi
                             driver_mqtt
                             module_wifi
+                            module_mqtt
                             util_dataqueue
                             defines
                             project_defines
