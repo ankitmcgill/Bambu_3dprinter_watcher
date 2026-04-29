@@ -534,8 +534,8 @@
           }
         ],
         "isPage": true,
-        "editor_posx": 200,
-        "editor_posy": -200,
+        "editor_posx": 300,
+        "editor_posy": -300,
         "properties": [
           {
             "nid": 10,
@@ -10068,8 +10068,8 @@
           }
         ],
         "isPage": true,
-        "editor_posx": 390,
-        "editor_posy": -200,
+        "editor_posx": 585,
+        "editor_posy": -300,
         "properties": [
           {
             "nid": 10,
@@ -10191,11 +10191,11 @@
   },
   "animations": [],
   "selected_theme": "Default",
-  "selected_screen": "GUID84283880-554231S1675117",
+  "selected_screen": "GUID1649013-209991S13615116",
   "info": {
     "name": "project_ui.spj",
     "depth": 1,
-    "width": 170,
+    "width": 240,
     "height": 320,
     "rotation": 0,
     "offset_x": 0,
@@ -10220,7 +10220,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 96,
+    "backup_cnt": 98,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
