@@ -122,10 +122,7 @@ void app_main(void)
     // Subscribe To Module Mqtt Notifications
     MODULE_MQTT_AddNotificationTarget(&mqtt_dataqueue);
 
-    // Start Network Stack
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = MODULE_WIFI_COMMAND_CONNECT;
-    MODULE_WIFI_AddCommand(&dq_i);
+    // Wifi cycle starts automatically after AP window expires (see module_wifi)
 
     // Start Scheduler
     // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
@@ -144,6 +141,11 @@ void app_main(void)
                 {
                     switch(dq_i.data)
                     {
+                        case MODULE_WIFI_NOTIFICATION_APSTARTED:
+                            s_set_screen2_message("Setup Portal\nActive");
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: AP Started");
+                            break;
+
                         case MODULE_WIFI_NOTIFICATION_CHECKING_SAVED_CREDENTIALS:
                             s_set_screen2_message("Checking Saved\nWiFi\nCredentials");
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Saved Credentials");

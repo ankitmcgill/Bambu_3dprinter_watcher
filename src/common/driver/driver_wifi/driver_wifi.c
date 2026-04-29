@@ -355,12 +355,16 @@ static void s_event_handler_wifi(void* arg, esp_event_base_t event_base, int32_t
             case WIFI_EVENT_AP_STACONNECTED: {
                 wifi_event_ap_staconnected_t *ap_conn = event_data;
                 ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_STACONNECTED: MAC " MACSTR, MAC2STR(ap_conn->mac));
+                dq_i.data = DRIVER_WIFI_NOTIFICATION_AP_STA_CONNECTED;
+                s_notify(&dq_i, 0);
                 break;
             }
 
             case WIFI_EVENT_AP_STADISCONNECTED: {
                 wifi_event_ap_stadisconnected_t *ap_disconn = event_data;
                 ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "WIFI_EVENT_AP_STADISCONNECTED: MAC " MACSTR, MAC2STR(ap_disconn->mac));
+                dq_i.data = DRIVER_WIFI_NOTIFICATION_AP_STA_DISCONNECTED;
+                s_notify(&dq_i, 0);
                 break;
             }
 

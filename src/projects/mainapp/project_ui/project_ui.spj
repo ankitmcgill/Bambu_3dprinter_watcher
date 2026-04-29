@@ -305,7 +305,7 @@
                   {
                     "nid": 1030,
                     "strtype": "LABEL/Text",
-                    "strval": "Connecting To\\nWi-Fi ...",
+                    "strval": "",
                     "InheritedType": 10
                   },
                   {
@@ -321,9 +321,9 @@
                             "flags": 4096,
                             "strtype": "_style/Text_Color",
                             "intarray": [
-                              74,
-                              164,
-                              112,
+                              236,
+                              255,
+                              0,
                               255
                             ],
                             "InheritedType": 7
@@ -10191,7 +10191,7 @@
   },
   "animations": [],
   "selected_theme": "Default",
-  "selected_screen": "GUID1649013-209991S13615116",
+  "selected_screen": "GUID84283880-554231S1675117",
   "info": {
     "name": "project_ui.spj",
     "depth": 1,
@@ -10220,7 +10220,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 91,
+    "backup_cnt": 95,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

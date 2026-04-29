@@ -20,7 +20,8 @@
 #include "project_defines.h"
 
 // NVS
-#define NVS_NAMESPACE       "bambu_cfg"
+#define NVS_NAMESPACE               "bambu_cfg"
+#define CAPTIVE_PORTAL_HTML_BUF_SIZE (4096)
 #define NVS_KEY_SSID        "ssid"
 #define NVS_KEY_PWD         "pwd"
 #define NVS_KEY_API_KEY     "api_key"
@@ -41,11 +42,15 @@ static util_dataqueue_item_t s_dq_i;
 static module_wifi_state_t s_wifi_credential_source;
 static rtos_component_type_t s_component_type;
 static esp_timer_handle_t s_wifi_timer_handle;
+static esp_timer_handle_t s_ap_timer_handle;
 static uint8_t s_wifi_retry_count;
 static TaskHandle_t s_dns_task_handle;
 static httpd_handle_t s_http_server;
 static volatile bool s_portal_connect_pending;
-static char s_html_buf[4096];
+static bool s_ap_window_active;
+static bool s_ap_window_expired;
+static uint8_t s_ap_client_count;
+static char* s_html_buf;
 
 // Local Functions
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
@@ -56,9 +61,11 @@ static void s_nvs_write_str(const char* key, const char* val);
 static void s_url_decode(const char* in, char* out, size_t out_len);
 static void s_form_field(const char* body, const char* key, char* out, size_t out_len);
 static void s_captive_portal_start(void);
+static void s_captive_portal_stop(void);
 // Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
+static void s_ap_timer_cb(void *arg);
 static void s_dns_task(void *arg);
 static esp_err_t s_http_get_handler(httpd_req_t *req);
 static esp_err_t s_http_post_handler(httpd_req_t *req);
@@ -77,6 +84,10 @@ bool MODULE_WIFI_Init(void)
     s_http_server = NULL;
     s_dns_task_handle = NULL;
     s_portal_connect_pending = false;
+    s_ap_window_active = false;
+    s_ap_window_expired = false;
+    s_ap_client_count = 0;
+    s_html_buf = NULL;
 
     // Create Data Queue
     UTIL_DATAQUEUE_Create(&s_dataqueue, MODULE_WIFI_DATAQUEUE_MAX);
@@ -100,12 +111,16 @@ bool MODULE_WIFI_Init(void)
     };
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &s_wifi_timer_handle));
 
+    // Setup AP Window Timer
+    const esp_timer_create_args_t ap_timer_args = {
+        .callback = &s_ap_timer_cb,
+        .arg = (void*)0,
+        .name = "ap-window"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&ap_timer_args, &s_ap_timer_handle));
+
     // Add Notification Targets
     DRIVER_WIFI_AddNotificationTarget(&s_dataqueue);
-
-    // Start AP Broadcast - captive portal is always active
-    util_dataqueue_item_t ap_cmd = { .data_type = DATA_TYPE_COMMAND, .data = DRIVER_WIFI_COMMAND_AP_BROADCAST };
-    DRIVER_WIFI_AddCommand(&ap_cmd);
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Type %u. Init", s_component_type);
 
@@ -175,7 +190,19 @@ static void s_state_mainiter(void)
     switch(s_state)
     {
         case MODULE_WIFI_STATE_IDLE:
-            // Do Nothing
+            // On Initial Boot (s_state_prev == -1), Activate AP Window
+            if(s_state_prev == (module_wifi_state_t)-1){
+                s_state_set(MODULE_WIFI_STATE_AP);
+            }
+            break;
+
+        case MODULE_WIFI_STATE_AP:
+            if(s_state_prev != s_state){
+                dq_i.data_type = DATA_TYPE_COMMAND;
+                dq_i.data = DRIVER_WIFI_COMMAND_AP_BROADCAST;
+                DRIVER_WIFI_AddCommand(&dq_i);
+                s_state_prev = s_state;
+            }
             break;
 
         case MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS:
@@ -356,9 +383,34 @@ static void s_task_function(void *pvParameters)
                             }
                             break;
 
+                        case DRIVER_WIFI_NOTIFICATION_AP_STA_CONNECTED:
+                            s_ap_client_count += 1;
+                            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "AP client connected (%u total)", s_ap_client_count);
+                            break;
+
+                        case DRIVER_WIFI_NOTIFICATION_AP_STA_DISCONNECTED:
+                            if(s_ap_client_count > 0) s_ap_client_count -= 1;
+                            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "AP client disconnected (%u remaining)", s_ap_client_count);
+                            if(s_ap_window_expired && s_ap_client_count == 0){
+                                s_ap_window_expired = false;
+                                s_ap_window_active = false;
+                                s_captive_portal_stop();
+                                s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
+                                ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Last AP client disconnected, resuming wifi cycle");
+                            }
+                            break;
+
                         case DRIVER_WIFI_NOTIFICATION_APSTARTED:
-                            // Start Captive Portal HTTP Server Once AP Is Up
                             s_captive_portal_start();
+                            s_ap_window_active = true;
+                            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "AP window: %us", MODULE_WIFI_AP_WINDOW_SEC);
+                            ESP_ERROR_CHECK(esp_timer_start_once(
+                                s_ap_timer_handle,
+                                (uint64_t)MODULE_WIFI_AP_WINDOW_SEC * 1000000
+                            ));
+                            s_dq_i.data_type = DATA_TYPE_NOTIFICATION;
+                            s_dq_i.data = MODULE_WIFI_NOTIFICATION_APSTARTED;
+                            s_notify(&s_dq_i, 0);
                             break;
 
                         default:
@@ -368,9 +420,14 @@ static void s_task_function(void *pvParameters)
             }
         }
 
-        // Handle Portal Connect Request (state-independent - portal is always active)
+        // Handle Portal Connect Request
         if(s_portal_connect_pending) {
             s_portal_connect_pending = false;
+            if(esp_timer_is_active(s_ap_timer_handle)){
+                ESP_ERROR_CHECK(esp_timer_stop(s_ap_timer_handle));
+            }
+            s_ap_window_active = false;
+            s_captive_portal_stop();
             if(esp_timer_is_active(s_wifi_timer_handle)){
                 ESP_ERROR_CHECK(esp_timer_stop(s_wifi_timer_handle));
             }
@@ -529,7 +586,7 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
     const char* sel_global = region_china ? "" : " selected";
     const char* sel_china  = region_china ? " selected" : "";
 
-    snprintf(s_html_buf, sizeof(s_html_buf),
+    snprintf(s_html_buf, CAPTIVE_PORTAL_HTML_BUF_SIZE,
         "<!DOCTYPE html><html><head>"
         "<meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -651,11 +708,33 @@ static esp_err_t s_http_redirect_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static void s_ap_timer_cb(void *arg)
+{
+    // AP Window Expired
+    // If A Client Is Still Connected, Defer Teardown Until It Disconnects
+
+    if(s_ap_client_count > 0){
+        s_ap_window_expired = true;
+        ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "AP window expired, deferring teardown - %u client(s) connected", s_ap_client_count);
+    } else {
+        s_ap_window_active = false;
+        s_captive_portal_stop();
+        s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
+        ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "AP window expired, resuming wifi cycle");
+    }
+}
+
 static void s_captive_portal_start(void)
 {
     // Start HTTP Server And DNS Hijack For Captive Portal
 
     if(s_http_server != NULL) return;
+
+    s_html_buf = malloc(CAPTIVE_PORTAL_HTML_BUF_SIZE);
+    if(!s_html_buf){
+        ESP_LOGE(DEBUG_TAG_MODULE_WIFI, "Captive portal html buf malloc failed");
+        return;
+    }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.lru_purge_enable = true;
@@ -702,6 +781,33 @@ static void s_captive_portal_start(void)
     );
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal started at http://192.168.4.1/");
+}
+
+static void s_captive_portal_stop(void)
+{
+    // Stop HTTP Server, DNS Task, And AP Interface
+
+    if(s_dns_task_handle != NULL){
+        vTaskDelete(s_dns_task_handle);
+        s_dns_task_handle = NULL;
+    }
+
+    if(s_http_server != NULL){
+        httpd_stop(s_http_server);
+        s_http_server = NULL;
+    }
+
+    if(s_html_buf != NULL){
+        free(s_html_buf);
+        s_html_buf = NULL;
+    }
+
+    esp_wifi_set_mode(WIFI_MODE_STA);
+
+    s_ap_window_expired = false;
+    s_ap_client_count = 0;
+
+    ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal stopped");
 }
 
 static void s_nvs_read_str(const char* key, char* out, size_t out_len)
