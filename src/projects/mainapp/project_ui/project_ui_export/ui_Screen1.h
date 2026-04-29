@@ -20,6 +20,7 @@ extern lv_obj_t *ui_Label7;
 extern lv_obj_t *ui_Panel9;
 extern lv_obj_t *ui_Sceen1PanelSTATUS;
 extern lv_obj_t *ui_Screen1LabelSTATUS;
+extern lv_obj_t *ui_ContainerPRINTERDATA;
 extern lv_obj_t *ui_PanelBEDTEMP;
 extern lv_obj_t *ui_Image1;
 extern lv_obj_t *ui_Container2;
