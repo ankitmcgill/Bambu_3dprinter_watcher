@@ -34,14 +34,14 @@ bool UTIL_DATAQUEUE_MessageCheck(util_dataqueue_t* dq)
 {
     // Check For Item
 
-    return (uxQueueMessagesWaiting(dq->handle) == pdPASS);
+    return (uxQueueMessagesWaiting(dq->handle) > 0);
 }
 
 bool UTIL_DATAQUEUE_MessageGet(util_dataqueue_t* dq, util_dataqueue_item_t* i, TickType_t wait)
 {
     // Get Item
 
-    if(uxQueueMessagesWaiting(dq->handle) != pdPASS){
+    if(uxQueueMessagesWaiting(dq->handle) == 0){
         return false;
     }
 

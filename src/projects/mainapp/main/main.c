@@ -20,10 +20,15 @@
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
 
+// Private Definitions
 typedef enum {
     PRINTER_STATUS_ONLINE = 0,
     PRINTER_STATUS_OFFLINE,
 }printer_status_t;
+
+// Local Variables
+static util_dataqueue_t main_dataqueue;
+static util_dataqueue_t mqtt_dataqueue;
 
 // Local Functions
 static void s_connect_mqtt_broker(void);
@@ -48,8 +53,6 @@ void app_main(void)
     uint8_t buffer[50] = {0};
     uint32_t size_flash;
     uint32_t size_ram;
-    util_dataqueue_t main_dataqueue;
-    util_dataqueue_t mqtt_dataqueue;
 
     UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
     UTIL_DATAQUEUE_Create(&mqtt_dataqueue, 8);
