@@ -170,6 +170,16 @@ static bool s_lcd_panel_setup(void)
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(s_panel_handle, true));
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(s_panel_handle, 0, 0));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(s_panel_handle, false, false));
+
+    // Fill controller RAM with black before enabling display to prevent artifacts
+    uint8_t *clear_buf = heap_caps_calloc(DRIVER_LCD_DISPLAY_HRES, 3, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    assert(clear_buf);
+    for(int y = 0; y < DRIVER_LCD_DISPLAY_VRES; y++) {
+        esp_lcd_panel_draw_bitmap(s_panel_handle, 0, y, DRIVER_LCD_DISPLAY_HRES, y + 1, clear_buf);
+    }
+    vTaskDelay(pdMS_TO_TICKS(50));
+    free(clear_buf);
+
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(s_panel_handle, true));
 
     // Enable backlight at full brightness
@@ -188,7 +198,9 @@ static bool s_lcd_flush_ready_cb(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pan
     // Called by SPI DMA ISR when a color transfer is complete
     // Signal LVGL that the flush buffer is free for the next frame
 
-    lv_display_flush_ready(s_lvgl_display);
+    if(s_lvgl_display) {
+        lv_display_flush_ready(s_lvgl_display);
+    }
     return false;
 }
 
