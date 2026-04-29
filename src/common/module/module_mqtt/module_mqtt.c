@@ -24,6 +24,7 @@ static util_dataqueue_t* s_notification_targets[MODULE_MQTT_NOTIFICATION_TARGET_
 static util_dataqueue_item_t s_dq_i;
 static rtos_component_type_t s_component_type;
 static esp_timer_handle_t s_reconnect_timer_handle;
+static esp_timer_handle_t s_printer_timer_handle;
 
 // Local Functions
 static bool s_notify(util_dataqueue_item_t* dq_i, TickType_t wait);
@@ -33,6 +34,7 @@ static void s_issue_connect(void);
 // Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
+static void s_printer_timer_cb(void *arg);
 
 // External Functions
 bool MODULE_MQTT_Init(void)
@@ -65,6 +67,14 @@ bool MODULE_MQTT_Init(void)
         .name = "mqtt-reconnect"
     };
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &s_reconnect_timer_handle));
+
+    // Setup Printer Online Timeout Timer
+    const esp_timer_create_args_t printer_timer_args = {
+        .callback = &s_printer_timer_cb,
+        .arg = (void*)0,
+        .name = "mqtt-printer"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&printer_timer_args, &s_printer_timer_handle));
 
     // Subscribe To Driver Mqtt Notifications
     DRIVER_MQTT_AddNotificationTarget(&s_dataqueue);
@@ -184,6 +194,15 @@ static void s_state_mainiter(void)
             if(s_state_prev != s_state){
                 out.data = MODULE_MQTT_NOTIFICATION_CONNECTED;
                 s_notify(&out, 0);
+
+                if(esp_timer_is_active(s_printer_timer_handle)){
+                    ESP_ERROR_CHECK(esp_timer_stop(s_printer_timer_handle));
+                }
+                ESP_ERROR_CHECK(esp_timer_start_once(
+                    s_printer_timer_handle,
+                    (uint64_t)MODULE_MQTT_PRINTER_ONLINE_TIMEOUT_SEC * 1000000
+                ));
+
                 s_state_prev = s_state;
             }
             break;
@@ -192,6 +211,10 @@ static void s_state_mainiter(void)
             if(s_state_prev != s_state){
                 out.data = MODULE_MQTT_NOTIFICATION_DISCONNECTED;
                 s_notify(&out, 0);
+
+                if(esp_timer_is_active(s_printer_timer_handle)){
+                    ESP_ERROR_CHECK(esp_timer_stop(s_printer_timer_handle));
+                }
 
                 ESP_LOGI(DEBUG_TAG_MODULE_MQTT, "Scheduling reconnect in %us", MODULE_MQTT_RECONNECT_PERIOD_SEC);
                 if(esp_timer_is_active(s_reconnect_timer_handle)){
@@ -202,6 +225,22 @@ static void s_state_mainiter(void)
                     (uint64_t)MODULE_MQTT_RECONNECT_PERIOD_SEC * 1000000
                 ));
 
+                s_state_prev = s_state;
+            }
+            break;
+
+        case MODULE_MQTT_STATE_PRINTER_ONLINE:
+            if(s_state_prev != s_state){
+                out.data = MODULE_MQTT_NOTIFICATION_PRINTER_ONLINE;
+                s_notify(&out, 0);
+                s_state_prev = s_state;
+            }
+            break;
+
+        case MODULE_MQTT_STATE_PRINTER_OFFLINE:
+            if(s_state_prev != s_state){
+                out.data = MODULE_MQTT_NOTIFICATION_PRINTER_OFFLINE;
+                s_notify(&out, 0);
                 s_state_prev = s_state;
             }
             break;
@@ -241,6 +280,9 @@ static void s_task_function(void *pvParameters)
                             if(esp_timer_is_active(s_reconnect_timer_handle)){
                                 ESP_ERROR_CHECK(esp_timer_stop(s_reconnect_timer_handle));
                             }
+                            if(esp_timer_is_active(s_printer_timer_handle)){
+                                ESP_ERROR_CHECK(esp_timer_stop(s_printer_timer_handle));
+                            }
                             s_state_set(MODULE_MQTT_STATE_IDLE);
                             break;
 
@@ -272,6 +314,15 @@ static void s_task_function(void *pvParameters)
                             memcpy(out.data_buff.value.mqtt_data, s_dq_i.data_buff.value.mqtt_data,
                                    sizeof(out.data_buff.value.mqtt_data));
                             s_notify(&out, 0);
+
+                            if(esp_timer_is_active(s_printer_timer_handle)){
+                                ESP_ERROR_CHECK(esp_timer_stop(s_printer_timer_handle));
+                            }
+                            ESP_ERROR_CHECK(esp_timer_start_once(
+                                s_printer_timer_handle,
+                                (uint64_t)MODULE_MQTT_PRINTER_ONLINE_TIMEOUT_SEC * 1000000
+                            ));
+                            s_state_set(MODULE_MQTT_STATE_PRINTER_ONLINE);
                             break;
                         }
 
@@ -298,4 +349,13 @@ static void s_timer_cb(void *arg)
 
     ESP_LOGI(DEBUG_TAG_MODULE_MQTT, "Reconnect timer fired");
     s_issue_connect();
+}
+
+static void s_printer_timer_cb(void *arg)
+{
+    // Printer Online Timeout Callback
+    // Triggered When No Data Received Within MODULE_MQTT_PRINTER_ONLINE_TIMEOUT_SEC
+
+    ESP_LOGI(DEBUG_TAG_MODULE_MQTT, "Printer online timer expired");
+    s_state_set(MODULE_MQTT_STATE_PRINTER_OFFLINE);
 }

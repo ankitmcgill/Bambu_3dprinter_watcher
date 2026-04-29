@@ -26,8 +26,8 @@ typedef enum {
 }printer_status_t;
 
 // Local Functions
-static void s_set_screen2_message(const char* format, ...);
 static void s_connect_mqtt_broker(void);
+static void s_set_screen2_message(const char* format, ...);
 static void s_set_screen1_status(printer_status_t status);
 
 void app_main(void)
@@ -130,6 +130,10 @@ void app_main(void)
     // Start Scheduler
     // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
 
+    // Turn Of Uneccesary Loggings
+    esp_log_level_set("D.Wifi", ESP_LOG_NONE);
+    esp_log_level_set("D.Lcd_Lvgl", ESP_LOG_NONE);
+
     while(true)
     {
         if(UTIL_DATAQUEUE_MessageCheck(&main_dataqueue))
@@ -200,7 +204,17 @@ void app_main(void)
                             break;
 
                         case MODULE_MQTT_NOTIFICATION_DATA_RECEIVED:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received. gcode_state=%u", dq_i.data_buff.value.uint8);
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received");
+                            break;
+
+                        case MODULE_MQTT_NOTIFICATION_PRINTER_ONLINE:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Online");
+                            s_set_screen1_status(PRINTER_STATUS_ONLINE);
+                            break;
+
+                        case MODULE_MQTT_NOTIFICATION_PRINTER_OFFLINE:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Offline");
+                            s_set_screen1_status(PRINTER_STATUS_OFFLINE);
                             break;
 
                         default:
@@ -214,24 +228,6 @@ void app_main(void)
     }
 
     vTaskDelete(NULL);
-}
-
-static void s_set_screen2_message(const char* format, ...)
-{
-    // Set Screen2 Message
-
-    util_dataqueue_item_t dq_i;
-    char message[64];
-    va_list arglist;
-
-    va_start(arglist, format);
-    vsprintf(message, format, arglist);
-    va_end(arglist);
-
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
-    strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
-    DRIVER_LCD_AddCommand(&dq_i);
 }
 
 static void s_connect_mqtt_broker(void)
@@ -266,6 +262,24 @@ static void s_connect_mqtt_broker(void)
     MODULE_MQTT_AddCommand(&dq_i);
 
     ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: connecting as %s topic %s", username, topic);
+}
+
+static void s_set_screen2_message(const char* format, ...)
+{
+    // Set Screen2 Message
+
+    util_dataqueue_item_t dq_i;
+    char message[64];
+    va_list arglist;
+
+    va_start(arglist, format);
+    vsprintf(message, format, arglist);
+    va_end(arglist);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
+    strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
+    DRIVER_LCD_AddCommand(&dq_i);
 }
 
 static void s_set_screen1_status(printer_status_t status)
