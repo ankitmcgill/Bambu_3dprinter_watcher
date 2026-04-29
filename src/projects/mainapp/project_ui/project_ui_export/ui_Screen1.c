@@ -94,6 +94,7 @@ lv_obj_set_width( ui_ContainerPRINTERDATA, lv_pct(100));
 lv_obj_set_flex_grow( ui_ContainerPRINTERDATA, 1);
 lv_obj_set_flex_flow(ui_ContainerPRINTERDATA,LV_FLEX_FLOW_COLUMN);
 lv_obj_set_flex_align(ui_ContainerPRINTERDATA, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+lv_obj_add_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_remove_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_PanelBEDTEMP = lv_obj_create(ui_ContainerPRINTERDATA);

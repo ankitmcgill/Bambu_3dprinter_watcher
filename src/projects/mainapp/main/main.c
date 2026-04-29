@@ -145,12 +145,12 @@ void app_main(void)
                     switch(dq_i.data)
                     {
                         case MODULE_WIFI_NOTIFICATION_CHECKING_SAVED_CREDENTIALS:
-                            s_set_screen2_message("Checking Saved\nWiFi Credentials");
+                            s_set_screen2_message("Checking Saved\nWiFi\nCredentials");
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Saved Credentials");
                             break;
 
                         case MODULE_WIFI_NOTIFICATION_CHECKING_DEFAULT_CREDENTIALS:
-                            s_set_screen2_message("Checking Default\nWiFi Credentials");
+                            s_set_screen2_message("Checking Default\nWiFi\nCredentials");
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Default Credentials");
                             break;
 
@@ -173,7 +173,7 @@ void app_main(void)
 
                             // Switch To Screen 1
                             // After 4 Second Delay
-                            vTaskDelay(pdMS_TO_TICKS(3000));
+                            vTaskDelay(pdMS_TO_TICKS(2000));
                             dq_i.data_type = DATA_TYPE_COMMAND;
                             dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
                             dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;

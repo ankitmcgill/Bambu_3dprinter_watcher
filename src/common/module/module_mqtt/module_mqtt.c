@@ -2,6 +2,7 @@
 // APRIL 29, 2026
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -311,8 +312,6 @@ static void s_task_function(void *pvParameters)
                                 .data_type = DATA_TYPE_NOTIFICATION,
                                 .data      = MODULE_MQTT_NOTIFICATION_DATA_RECEIVED,
                             };
-                            memcpy(out.data_buff.value.mqtt_data, s_dq_i.data_buff.value.mqtt_data,
-                                   sizeof(out.data_buff.value.mqtt_data));
                             s_notify(&out, 0);
 
                             if(esp_timer_is_active(s_printer_timer_handle)){
@@ -323,6 +322,9 @@ static void s_task_function(void *pvParameters)
                                 (uint64_t)MODULE_MQTT_PRINTER_ONLINE_TIMEOUT_SEC * 1000000
                             ));
                             s_state_set(MODULE_MQTT_STATE_PRINTER_ONLINE);
+
+                            free(s_dq_i.data_buff.value.mqtt_data);
+                            s_dq_i.data_buff.value.mqtt_data = NULL;
                             break;
                         }
 

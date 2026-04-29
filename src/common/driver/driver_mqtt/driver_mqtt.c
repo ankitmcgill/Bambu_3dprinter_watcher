@@ -2,6 +2,7 @@
 // APRIL 28, 2026
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -171,7 +172,7 @@ static void s_task_function(void *pvParameters)
                                     .authentication.password = s_password,
                                 },
                                 .buffer = {
-                                    .size = 8192,
+                                    .size = 4096,
                                 },
                             };
 
@@ -238,16 +239,21 @@ static void s_event_handler_mqtt(void* arg, esp_event_base_t event_base, int32_t
         case MQTT_EVENT_DATA: {
             if(event->data_len <= 0) break;
 
-            int copy_len = event->data_len < (int)(sizeof(dq_i.data_buff.value.mqtt_data) - 1)
-                ? event->data_len
-                : (int)(sizeof(dq_i.data_buff.value.mqtt_data) - 1);
-            memcpy(dq_i.data_buff.value.mqtt_data, event->data, copy_len);
-            dq_i.data_buff.value.mqtt_data[copy_len] = '\0';
+            char* buf = malloc(event->data_len + 1);
+            if(!buf){
+                ESP_LOGW(DEBUG_TAG_DRIVER_MQTT, "MQTT_EVENT_DATA malloc failed");
+                break;
+            }
+            memcpy(buf, event->data, event->data_len);
+            buf[event->data_len] = '\0';
 
             ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "MQTT_EVENT_DATA (%d bytes)", event->data_len);
 
+            dq_i.data_buff.value.mqtt_data = buf;
             dq_i.data = DRIVER_MQTT_NOTIFICATION_DATA_RECEIVED;
-            s_notify(&dq_i, 0);
+            if(!s_notify(&dq_i, 0)){
+                free(buf);
+            }
             break;
         }
 
