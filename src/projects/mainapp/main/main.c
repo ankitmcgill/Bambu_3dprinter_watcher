@@ -18,6 +18,9 @@
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
 
+// Local Functions
+static void s_set_screen2_message(const char* format, ...);
+
 void app_main(void)
 {
     // Initialize NVS
@@ -36,7 +39,9 @@ void app_main(void)
     uint8_t buffer[50] = {0};
     uint32_t size_flash;
     uint32_t size_ram;
+    util_dataqueue_t main_dataqueue;
 
+    UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
     size_flash = DRIVER_CHIPINFO_GetFlashSizeBytes();
     size_ram = DRIVER_CHIPINFO_GetRamSizeBytes();
 
@@ -95,6 +100,8 @@ void app_main(void)
     // Intialize Network
     DRIVER_WIFI_Init();
     MODULE_WIFI_Init();
+    // Subscribe To Module Wifi Notifications
+    MODULE_WIFI_AddNotificationTarget(&main_dataqueue);
 
     // Initialize MQTT Stack
     DRIVER_MQTT_Init();
@@ -103,14 +110,80 @@ void app_main(void)
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = MODULE_WIFI_COMMAND_CONNECT;
     MODULE_WIFI_AddCommand(&dq_i);
-    
+
     // Start Scheduler
     // No Need. ESP-IDF Automatically Starts The Scheduler Before main Is Called
 
     while(true)
     {
+        if(UTIL_DATAQUEUE_MessageCheck(&main_dataqueue))
+        {
+            if(UTIL_DATAQUEUE_MessageGet(&main_dataqueue, &dq_i, 0))
+            {
+                if(dq_i.data_type == DATA_TYPE_NOTIFICATION)
+                {
+                    switch(dq_i.data)
+                    {
+                        case MODULE_WIFI_NOTIFICATION_CHECKING_SAVED_CREDENTIALS:
+                            s_set_screen2_message("Checking Saved\nWiFi Credentials");
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Saved Credentials");
+                            break;
+
+                        case MODULE_WIFI_NOTIFICATION_CHECKING_DEFAULT_CREDENTIALS:
+                            s_set_screen2_message("Checking Default\nWiFi Credentials");
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Checking Default Credentials");
+                            break;
+
+                        case MODULE_WIFI_NOTIFICATION_SCANNING:
+                            s_set_screen2_message("WiFi Scanning");
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Scanning");
+                            break;
+
+                        case MODULE_WIFI_NOTIFICATION_CONNECTED:
+                            s_set_screen2_message("Connected To\nWiFi");
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Connected");
+                            break;
+
+                        case MODULE_WIFI_NOTIFICATION_GOT_IP:
+                            s_set_screen2_message("Got IP\n%s", dq_i.data_buff.value.ip);
+                            ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Got IP %s", dq_i.data_buff.value.ip);
+
+                            // Switch To Screen 1
+                            // After 4 Second Delay
+                            vTaskDelay(pdMS_TO_TICKS(3000));
+                            dq_i.data_type = DATA_TYPE_COMMAND;
+                            dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
+                            dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
+                            DRIVER_LCD_AddCommand(&dq_i);
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     vTaskDelete(NULL);
+}
+
+void s_set_screen2_message(const char* format, ...)
+{
+    // Set Screen2 Message
+
+    util_dataqueue_item_t dq_i;
+    char message[64];
+    va_list arglist;
+
+    va_start(arglist, format);
+    vsprintf(message, format, arglist);
+    va_end(arglist);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
+    strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
+    DRIVER_LCD_AddCommand(&dq_i);
 }

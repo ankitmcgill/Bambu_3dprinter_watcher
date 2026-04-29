@@ -36,7 +36,13 @@ typedef enum{
     MODULE_WIFI_STATE_DISCONNECTED
 }module_wifi_state_t;
 
-typedef driver_wifi_notification_type_t module_wifi_notification_type_t;
+typedef enum {
+    MODULE_WIFI_NOTIFICATION_CHECKING_SAVED_CREDENTIALS = 0,
+    MODULE_WIFI_NOTIFICATION_CHECKING_DEFAULT_CREDENTIALS,
+    MODULE_WIFI_NOTIFICATION_SCANNING,
+    MODULE_WIFI_NOTIFICATION_CONNECTED,
+    MODULE_WIFI_NOTIFICATION_GOT_IP,
+}module_wifi_notification_type_t;
 
 bool MODULE_WIFI_Init(void);
 

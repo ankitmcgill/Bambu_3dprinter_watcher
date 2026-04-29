@@ -15,7 +15,6 @@
 #include "lwip/netdb.h"
 
 #include "module_wifi.h"
-#include "driver_lcd.h"
 #include "define_common_data_types.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
@@ -57,7 +56,6 @@ static void s_nvs_write_str(const char* key, const char* val);
 static void s_url_decode(const char* in, char* out, size_t out_len);
 static void s_form_field(const char* body, const char* key, char* out, size_t out_len);
 static void s_captive_portal_start(void);
-static void s_set_lcd_message(const char* format, ...);
 // Callbacks
 static void s_task_function(void *pvParameters);
 static void s_timer_cb(void *arg);
@@ -182,8 +180,10 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS:
             s_wifi_retry_count = 0;
-            s_set_lcd_message("Checking Saved\nWiFi Credentials");
-            
+            dq_i.data_type = DATA_TYPE_NOTIFICATION;
+            dq_i.data = MODULE_WIFI_NOTIFICATION_CHECKING_SAVED_CREDENTIALS;
+            s_notify(&dq_i, 0);
+
             if(DRIVER_WIFI_CheckSavedWifiCredentials())
             {
                 // WiFi Connect
@@ -199,8 +199,11 @@ static void s_state_mainiter(void)
             break;
 
         case MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS:
-            s_set_lcd_message("Checking Default\nWiFi Credentials");
             s_wifi_retry_count = 0;
+            dq_i.data_type = DATA_TYPE_NOTIFICATION;
+            dq_i.data = MODULE_WIFI_NOTIFICATION_CHECKING_DEFAULT_CREDENTIALS;
+            s_notify(&dq_i, 0);
+            
             #if defined(DEFAULT_WIFI_SSID) && defined(DEFAULT_WIFI_PASSWORD)
                     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Default Wi-Fi Credential Found");
                     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "   SSID: %s", DEFAULT_WIFI_SSID);
@@ -222,8 +225,11 @@ static void s_state_mainiter(void)
             break;
 
         case MODULE_WIFI_STATE_SCAN:
-            s_set_lcd_message("Running WiFi Scan");
             s_wifi_retry_count = 0;
+            dq_i.data_type = DATA_TYPE_NOTIFICATION;
+            dq_i.data = MODULE_WIFI_NOTIFICATION_SCANNING;
+            s_notify(&dq_i, 0);
+            
             dq_i.data_type = DATA_TYPE_COMMAND;
             dq_i.data = DRIVER_WIFI_COMMAND_SCAN;
             DRIVER_WIFI_AddCommand(&dq_i);
@@ -236,7 +242,6 @@ static void s_state_mainiter(void)
 
         case MODULE_WIFI_STATE_SCAN_DONE:
             // Restart Connection Logic
-            s_set_lcd_message("WiFi Scan Done");
             s_state_set(MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS);
             break;
 
@@ -255,25 +260,26 @@ static void s_state_mainiter(void)
             break;
 
         case MODULE_WIFI_STATE_CONNECTED:
-            // Do Nothing
-            s_set_lcd_message("Connected To\nWiFi");
+            if(s_state_prev != s_state){
+                dq_i.data_type = DATA_TYPE_NOTIFICATION;
+                dq_i.data = MODULE_WIFI_NOTIFICATION_CONNECTED;
+                s_notify(&dq_i, 0);
+                s_state_prev = s_state;
+            }
             break;
 
         case MODULE_WIFI_STATE_GOT_IP:
             // Stop Timer
-            s_set_lcd_message("Got IP\n%s", s_dq_i.data_buff.value.ip);
+            dq_i.data_type = DATA_TYPE_NOTIFICATION;
+            dq_i.data = MODULE_WIFI_NOTIFICATION_GOT_IP;
+            memcpy(dq_i.data_buff.value.ip, s_dq_i.data_buff.value.ip, sizeof(dq_i.data_buff.value.ip));
+            s_notify(&dq_i, 0);
+            
             if(esp_timer_is_active(s_wifi_timer_handle)){
                 ESP_ERROR_CHECK(esp_timer_stop(s_wifi_timer_handle));
             }
             s_state_set(MODULE_WIFI_STATE_IDLE);
 
-            // Switch Screen To Home
-            // After 2 Second Delay
-            vTaskDelay(pdMS_TO_TICKS(4000));
-            dq_i.data_type = DATA_TYPE_COMMAND;
-            dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
-            dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
-            DRIVER_LCD_AddCommand(&dq_i);
             break;
 
         case MODULE_WIFI_STATE_LOST_IP:
@@ -321,9 +327,6 @@ static void s_task_function(void *pvParameters)
                 }
                 else if(s_dq_i.data_type == DATA_TYPE_NOTIFICATION)
                 {
-                    // Pass Notification To Module Wifi Notification Targets
-                    s_notify(&s_dq_i, 0);
-
                     // Take Action On Notification
                     switch(s_dq_i.data)
                     {
@@ -681,24 +684,6 @@ static void s_captive_portal_start(void)
     );
 
     ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "Captive portal started at http://192.168.4.1/");
-}
-
-void s_set_lcd_message(const char* format, ...)
-{
-    // Set LCD Message
-
-    util_dataqueue_item_t dq_i;
-    char message[64];
-    va_list arglist;
-
-    va_start(arglist, format);
-    vsprintf(message, format, arglist);
-    va_end(arglist);
-
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
-    strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
-    DRIVER_LCD_AddCommand(&dq_i);
 }
 
 static void s_nvs_read_str(const char* key, char* out, size_t out_len)
