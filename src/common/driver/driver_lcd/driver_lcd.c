@@ -218,7 +218,7 @@ static bool s_lvgl_setup(void)
     // Initialize Lvgl Port
     // SPI interface: partial refresh, two DMA-capable internal buffers of 100 lines each
 
-    const size_t buf_size = 100 * DRIVER_LCD_DISPLAY_HRES * sizeof(lv_color16_t);
+    const size_t buf_size = 32 * DRIVER_LCD_DISPLAY_HRES * sizeof(lv_color16_t);
 
     lv_init();
 
@@ -227,7 +227,7 @@ static bool s_lvgl_setup(void)
     void* buf2 = heap_caps_malloc(buf_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     assert(buf2);
 
-    s_rgb666_buf = heap_caps_malloc(100 * DRIVER_LCD_DISPLAY_HRES * 3, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    s_rgb666_buf = heap_caps_malloc(32 * DRIVER_LCD_DISPLAY_HRES * 3, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     assert(s_rgb666_buf);
 
     s_lvgl_display = lv_display_create(DRIVER_LCD_DISPLAY_HRES, DRIVER_LCD_DISPLAY_VRES);
