@@ -13,14 +13,22 @@
 #include "driver_lcd.h"
 #include "driver_wifi.h"
 #include "driver_mqtt.h"
+#include "driver_nvs.h"
 #include "module_wifi.h"
 #include "module_mqtt.h"
 #include "util_dataqueue.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
 
+typedef enum {
+    PRINTER_STATUS_ONLINE = 0,
+    PRINTER_STATUS_OFFLINE,
+}printer_status_t;
+
 // Local Functions
 static void s_set_screen2_message(const char* format, ...);
+static void s_connect_mqtt_broker(void);
+static void s_set_screen1_status(printer_status_t status);
 
 void app_main(void)
 {
@@ -41,8 +49,10 @@ void app_main(void)
     uint32_t size_flash;
     uint32_t size_ram;
     util_dataqueue_t main_dataqueue;
+    util_dataqueue_t mqtt_dataqueue;
 
     UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
+    UTIL_DATAQUEUE_Create(&mqtt_dataqueue, 8);
     size_flash = DRIVER_CHIPINFO_GetFlashSizeBytes();
     size_ram = DRIVER_CHIPINFO_GetRamSizeBytes();
 
@@ -107,6 +117,10 @@ void app_main(void)
     // Initialize MQTT Stack
     DRIVER_MQTT_Init();
     MODULE_MQTT_Init();
+    DRIVER_NVS_Init();
+
+    // Subscribe To Module Mqtt Notifications
+    MODULE_MQTT_AddNotificationTarget(&mqtt_dataqueue);
 
     // Start Network Stack
     dq_i.data_type = DATA_TYPE_COMMAND;
@@ -150,6 +164,9 @@ void app_main(void)
                             s_set_screen2_message("Got IP\n%s", dq_i.data_buff.value.ip);
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Got IP %s", dq_i.data_buff.value.ip);
 
+                            // Connect To Mqtt Broker & Topic
+                            s_connect_mqtt_broker();
+
                             // Switch To Screen 1
                             // After 4 Second Delay
                             vTaskDelay(pdMS_TO_TICKS(3000));
@@ -166,13 +183,40 @@ void app_main(void)
             }
         }
 
+        if(UTIL_DATAQUEUE_MessageCheck(&mqtt_dataqueue))
+        {
+            if(UTIL_DATAQUEUE_MessageGet(&mqtt_dataqueue, &dq_i, 0))
+            {
+                if(dq_i.data_type == DATA_TYPE_NOTIFICATION)
+                {
+                    switch(dq_i.data)
+                    {
+                        case MODULE_MQTT_NOTIFICATION_CONNECTED:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Connected");
+                            break;
+
+                        case MODULE_MQTT_NOTIFICATION_DISCONNECTED:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Disconnected");
+                            break;
+
+                        case MODULE_MQTT_NOTIFICATION_DATA_RECEIVED:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received. gcode_state=%u", dq_i.data_buff.value.uint8);
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     vTaskDelete(NULL);
 }
 
-void s_set_screen2_message(const char* format, ...)
+static void s_set_screen2_message(const char* format, ...)
 {
     // Set Screen2 Message
 
@@ -187,5 +231,60 @@ void s_set_screen2_message(const char* format, ...)
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE;
     strncpy(dq_i.data_buff.value.msg, message, sizeof(dq_i.data_buff.value.msg) - 1);
+    DRIVER_LCD_AddCommand(&dq_i);
+}
+
+static void s_connect_mqtt_broker(void)
+{
+    // Read Bambu Config From NVS And Configure Module Mqtt
+
+    driver_nvs_config_t* cfg;
+    util_dataqueue_item_t dq_i;
+    char username[DRIVER_NVS_USER_ID_LEN_MAX + 4];
+    char topic[DRIVER_NVS_DEVICE_ID_LEN_MAX + 32];
+
+    cfg = DRIVER_NVS_ReadConfig();
+    if(!cfg){
+        ESP_LOGW(DEBUG_TAG_MAIN, "MQTT connect: NVS read failed");
+        return;
+    }
+
+    if(cfg->user_id[0] == '\0' || cfg->api_key[0] == '\0' || cfg->device_id[0] == '\0'){
+        ESP_LOGW(DEBUG_TAG_MAIN, "MQTT connect: missing NVS fields");
+        return;
+    }
+
+    snprintf(username, sizeof(username), "u_%s", cfg->user_id);
+    snprintf(topic, sizeof(topic), "device/%s/report", cfg->device_id);
+
+    MODULE_MQTT_SetCredentials(username, cfg->api_key);
+    MODULE_MQTT_SetBrokerUrl("mqtts://us.mqtt.bambulab.com:8883");
+    MODULE_MQTT_SetTopic(topic);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = MODULE_MQTT_COMMAND_CONNECT;
+    MODULE_MQTT_AddCommand(&dq_i);
+
+    ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: connecting as %s topic %s", username, topic);
+}
+
+static void s_set_screen1_status(printer_status_t status)
+{
+    // Set Screen1 Status Label Text And Panel Background Color
+
+    util_dataqueue_item_t dq_i;
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS;
+    strncpy(dq_i.data_buff.value.msg,
+            (status == PRINTER_STATUS_ONLINE) ? "ONLINE" : "OFFLINE",
+            sizeof(dq_i.data_buff.value.msg) - 1);
+    DRIVER_LCD_AddCommand(&dq_i);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR;
+    dq_i.data_buff.value.uint8 = (status == PRINTER_STATUS_ONLINE)
+        ? DRIVER_LCD_STATUS_COLOR_GREEN
+        : DRIVER_LCD_STATUS_COLOR_RED;
     DRIVER_LCD_AddCommand(&dq_i);
 }

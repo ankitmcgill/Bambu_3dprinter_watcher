@@ -28,12 +28,18 @@ typedef enum {
     DRIVER_LCD_COMMAND_REFRESH_UI,
     DRIVER_LCD_COMMAND_SET_SCREEN2_MESSAGE,
     DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS,
+    DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR,
 }driver_lcd_command_type_t;
 
 typedef enum {
     DRIVER_LCD_SCREEN_STARTUP = 0,
     DRIVER_LCD_SCREEN_HOME
 }driver_lcd_screen_type_t;
+
+typedef enum {
+    DRIVER_LCD_STATUS_COLOR_GREEN = 0,
+    DRIVER_LCD_STATUS_COLOR_RED,
+}driver_lcd_status_color_t;
 
 bool DRIVER_LCD_Init(void);
 

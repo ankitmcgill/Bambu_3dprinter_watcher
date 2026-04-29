@@ -5,6 +5,7 @@ idf_component_register(SRCS "main.c"
                             driver_lcd
                             driver_wifi
                             driver_mqtt
+                            driver_nvs
                             module_wifi
                             module_mqtt
                             util_dataqueue

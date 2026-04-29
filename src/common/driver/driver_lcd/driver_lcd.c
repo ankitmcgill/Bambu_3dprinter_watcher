@@ -299,6 +299,18 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            {
+                                lv_color_t color = (dq_i.data_buff.value.uint8 == DRIVER_LCD_STATUS_COLOR_GREEN)
+                                    ? lv_color_hex(0x00FF00)
+                                    : lv_color_hex(0xFF0000);
+                                lv_obj_set_style_bg_color(ui_Sceen1PanelSTATUS, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+                                ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR - %u", dq_i.data_buff.value.uint8);
+                            }
+                            #endif
+                            break;
+
                         default:
                             break;
                     }
