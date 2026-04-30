@@ -248,7 +248,7 @@ static void s_event_handler_mqtt(void* arg, esp_event_base_t event_base, int32_t
             memcpy(buf, event->data, event->data_len);
             buf[event->data_len] = '\0';
 
-            ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "MQTT_EVENT_DATA (%d bytes)", event->data_len);
+            ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "MQTT_EVENT_DATA (%d bytes): %s", event->data_len, buf);
 
             dq_i.data_buff.value.mqtt_data = buf;
             dq_i.data = DRIVER_MQTT_NOTIFICATION_DATA_RECEIVED;

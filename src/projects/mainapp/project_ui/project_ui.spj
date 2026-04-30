@@ -3266,9 +3266,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -5076,9 +5076,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -6184,9 +6184,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -7992,9 +7992,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -9034,9 +9034,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -9743,9 +9743,9 @@
                                 "flags": 4096,
                                 "strtype": "_style/Bg_Color",
                                 "intarray": [
-                                  11,
-                                  15,
-                                  20,
+                                  0,
+                                  0,
+                                  0,
                                   255
                                 ],
                                 "InheritedType": 7
@@ -9874,12 +9874,6 @@
                     "InheritedType": 1
                   },
                   {
-                    "nid": 100,
-                    "strtype": "OBJECT/Hidden",
-                    "strval": "True",
-                    "InheritedType": 2
-                  },
-                  {
                     "nid": 110,
                     "strtype": "OBJECT/Clickable",
                     "strval": "False",
@@ -9929,7 +9923,28 @@
                   },
                   {
                     "part": "lv.PART.MAIN",
-                    "childs": [],
+                    "childs": [
+                      {
+                        "nid": 10000,
+                        "strtype": "_style/StyleState",
+                        "strval": "DEFAULT",
+                        "childs": [
+                          {
+                            "nid": 10520,
+                            "flags": 4096,
+                            "strtype": "_style/Bg_Color",
+                            "intarray": [
+                              0,
+                              0,
+                              0,
+                              255
+                            ],
+                            "InheritedType": 7
+                          }
+                        ],
+                        "InheritedType": 1
+                      }
+                    ],
                     "nid": 1010,
                     "strtype": "CONTAINER/Style_main",
                     "strval": "lv.PART.MAIN, Rectangle, Pad, Text, Transform",
@@ -10227,7 +10242,7 @@
   },
   "animations": [],
   "selected_theme": "Default",
-  "selected_screen": "GUID84283880-554231S1675117",
+  "selected_screen": "GUID1649013-209991S13615116",
   "info": {
     "name": "project_ui.spj",
     "depth": 1,
@@ -10256,7 +10271,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 104,
+    "backup_cnt": 106,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

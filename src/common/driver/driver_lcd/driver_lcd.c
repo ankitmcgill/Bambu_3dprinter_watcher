@@ -349,6 +349,17 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_PRINTERDATA_VISIBLE:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            if(dq_i.data_buff.value.uint8){
+                                lv_obj_remove_flag(ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN);
+                            } else {
+                                lv_obj_add_flag(ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN);
+                            }
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_PRINTERDATA_VISIBLE - %u", dq_i.data_buff.value.uint8);
+                            #endif
+                            break;
+
                         default:
                             break;
                     }

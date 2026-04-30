@@ -317,4 +317,9 @@ static void s_set_screen1_status(module_printer_state_t status)
         ? DRIVER_LCD_STATUS_COLOR_GREEN
         : DRIVER_LCD_STATUS_COLOR_RED;
     DRIVER_LCD_AddCommand(&dq_i);
+
+    dq_i.data_type = DATA_TYPE_COMMAND;
+    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PRINTERDATA_VISIBLE;
+    dq_i.data_buff.value.uint8 = (status == MODULE_PRINTER_STATE_ONLINE) ? 1 : 0;
+    DRIVER_LCD_AddCommand(&dq_i);
 }
