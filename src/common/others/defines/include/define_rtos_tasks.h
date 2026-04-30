@@ -15,6 +15,7 @@
 #define TASK_PRIORITY_MODULE_MQTT           (2)
 #define TASK_PRIORITY_MODULE_LCD            (2)
 #define TASK_PRIORITY_MODULE_API            (2)
+#define TASK_PRIORITY_MODULE_PRINTER        (2)
 #define TASK_PRIORITY_LVGL                  (5)
 
 // Task Stack Depth
@@ -24,6 +25,7 @@
 #define TASK_STACK_DEPTH_MODULE_MQTT        (4096)
 #define TASK_STACK_DEPTH_MODULE_LCD         (4096)
 #define TASK_STACK_DEPTH_MODULE_API         (4096)
+#define TASK_STACK_DEPTH_MODULE_PRINTER     (4096)
 #define TASK_STACK_DEPTH_LVGL               (4 * 4096)
 
 // Task Debug Tag
@@ -39,6 +41,7 @@
 #define DEBUG_TAG_MODULE_WIFI           ("M.Wifi")
 #define DEBUG_TAG_MODULE_LCD            ("M.Lcd")
 #define DEBUG_TAG_MODULE_API            ("M.api")
+#define DEBUG_TAG_MODULE_PRINTER        ("M.Printer")
 
 // Task Handles
 extern TaskHandle_t handle_task_driver_wifi;
@@ -47,5 +50,6 @@ extern TaskHandle_t handle_task_driver_lcd;
 extern TaskHandle_t handle_task_module_wifi;
 extern TaskHandle_t handle_task_module_mqtt;
 extern TaskHandle_t handle_task_module_api;
+extern TaskHandle_t handle_task_module_printer;
 
 #endif

@@ -176,13 +176,6 @@ void app_main(void)
                             ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received");
                             break;
 
-                        case MODULE_MQTT_NOTIFICATION_PRINTER_ONLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Online");
-                            break;
-
-                        case MODULE_MQTT_NOTIFICATION_PRINTER_OFFLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Offline");
-                            break;
 
                         default:
                             break;

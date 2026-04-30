@@ -16,24 +16,20 @@
 #include "driver_nvs.h"
 #include "module_wifi.h"
 #include "module_mqtt.h"
+#include "module_printer.h"
 #include "util_dataqueue.h"
 #include "define_rtos_tasks.h"
 #include "project_defines.h"
 
-// Private Definitions
-typedef enum {
-    PRINTER_STATUS_ONLINE = 0,
-    PRINTER_STATUS_OFFLINE,
-}printer_status_t;
-
 // Local Variables
 static util_dataqueue_t main_dataqueue;
 static util_dataqueue_t mqtt_dataqueue;
+static util_dataqueue_t printer_dataqueue;
 
 // Local Functions
 static void s_connect_mqtt_broker(void);
 static void s_set_screen2_message(const char* format, ...);
-static void s_set_screen1_status(printer_status_t status);
+static void s_set_screen1_status(module_printer_state_t status);
 
 void app_main(void)
 {
@@ -56,6 +52,7 @@ void app_main(void)
 
     UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
     UTIL_DATAQUEUE_Create(&mqtt_dataqueue, 8);
+    UTIL_DATAQUEUE_Create(&printer_dataqueue, 8);
     size_flash = DRIVER_CHIPINFO_GetFlashSizeBytes();
     size_ram = DRIVER_CHIPINFO_GetRamSizeBytes();
 
@@ -124,6 +121,10 @@ void app_main(void)
 
     // Subscribe To Module Mqtt Notifications
     MODULE_MQTT_AddNotificationTarget(&mqtt_dataqueue);
+
+    // Initialize Printer Module
+    MODULE_PRINTER_Init();
+    MODULE_PRINTER_AddNotificationTarget(&printer_dataqueue);
 
     // Wifi cycle starts automatically after AP window expires (see module_wifi)
 
@@ -207,14 +208,29 @@ void app_main(void)
                             ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received");
                             break;
 
-                        case MODULE_MQTT_NOTIFICATION_PRINTER_ONLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Online");
-                            s_set_screen1_status(PRINTER_STATUS_ONLINE);
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        if(UTIL_DATAQUEUE_MessageCheck(&printer_dataqueue))
+        {
+            if(UTIL_DATAQUEUE_MessageGet(&printer_dataqueue, &dq_i, 0))
+            {
+                if(dq_i.data_type == DATA_TYPE_NOTIFICATION)
+                {
+                    switch(dq_i.data)
+                    {
+                        case MODULE_PRINTER_NOTIFICATION_ONLINE:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "Printer: Online");
+                            s_set_screen1_status(MODULE_PRINTER_STATE_ONLINE);
                             break;
 
-                        case MODULE_MQTT_NOTIFICATION_PRINTER_OFFLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Printer Offline");
-                            s_set_screen1_status(PRINTER_STATUS_OFFLINE);
+                        case MODULE_PRINTER_NOTIFICATION_OFFLINE:
+                            ESP_LOGI(DEBUG_TAG_MAIN, "Printer: Offline");
+                            s_set_screen1_status(MODULE_PRINTER_STATE_OFFLINE);
                             break;
 
                         default:
@@ -282,7 +298,7 @@ static void s_set_screen2_message(const char* format, ...)
     DRIVER_LCD_AddCommand(&dq_i);
 }
 
-static void s_set_screen1_status(printer_status_t status)
+static void s_set_screen1_status(module_printer_state_t status)
 {
     // Set Screen1 Status Label Text And Panel Background Color
 
@@ -291,13 +307,13 @@ static void s_set_screen1_status(printer_status_t status)
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS;
     strncpy(dq_i.data_buff.value.msg,
-            (status == PRINTER_STATUS_ONLINE) ? "ONLINE" : "OFFLINE",
+            (status == MODULE_PRINTER_STATE_ONLINE) ? "ONLINE" : "OFFLINE",
             sizeof(dq_i.data_buff.value.msg) - 1);
     DRIVER_LCD_AddCommand(&dq_i);
 
     dq_i.data_type = DATA_TYPE_COMMAND;
     dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR;
-    dq_i.data_buff.value.uint8 = (status == PRINTER_STATUS_ONLINE)
+    dq_i.data_buff.value.uint8 = (status == MODULE_PRINTER_STATE_ONLINE)
         ? DRIVER_LCD_STATUS_COLOR_GREEN
         : DRIVER_LCD_STATUS_COLOR_RED;
     DRIVER_LCD_AddCommand(&dq_i);

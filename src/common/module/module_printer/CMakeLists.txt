@@ -1,10 +1,10 @@
-idf_component_register(SRCS "module_mqtt.c"
+idf_component_register(SRCS "module_printer.c"
                        INCLUDE_DIRS "include"
                        PRIV_REQUIRES
+                            module_mqtt
                             util_dataqueue
                             defines
                        REQUIRES
-                            driver_mqtt
                             esp_timer
                             freertos
 )

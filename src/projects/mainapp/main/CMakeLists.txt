@@ -8,6 +8,7 @@ idf_component_register(SRCS "main.c"
                             driver_nvs
                             module_wifi
                             module_mqtt
+                            module_printer
                             util_dataqueue
                             defines
                             project_defines
