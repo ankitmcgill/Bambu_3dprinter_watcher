@@ -97,6 +97,7 @@ lv_obj_set_width( ui_ContainerPRINTERDATA, lv_pct(100));
 lv_obj_set_flex_grow( ui_ContainerPRINTERDATA, 1);
 lv_obj_set_flex_flow(ui_ContainerPRINTERDATA,LV_FLEX_FLOW_COLUMN);
 lv_obj_set_flex_align(ui_ContainerPRINTERDATA, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+lv_obj_add_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_remove_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 lv_obj_set_style_bg_color(ui_ContainerPRINTERDATA, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_bg_opa(ui_ContainerPRINTERDATA, 255, LV_PART_MAIN| LV_STATE_DEFAULT);

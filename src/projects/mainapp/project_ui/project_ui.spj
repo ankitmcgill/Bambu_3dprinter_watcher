@@ -9949,6 +9949,12 @@
                     "InheritedType": 1
                   },
                   {
+                    "nid": 100,
+                    "strtype": "OBJECT/Hidden",
+                    "strval": "True",
+                    "InheritedType": 2
+                  },
+                  {
                     "nid": 110,
                     "strtype": "OBJECT/Clickable",
                     "strval": "False",
@@ -10346,7 +10352,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 114,
+    "backup_cnt": 115,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
