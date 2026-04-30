@@ -23,6 +23,7 @@ typedef struct{
         uint8_t uint8;
         char msg[64];
         char* mqtt_data;
+        void* ptr;
     }value;
 }util_dataqueue_data_buffer_type_t;
 

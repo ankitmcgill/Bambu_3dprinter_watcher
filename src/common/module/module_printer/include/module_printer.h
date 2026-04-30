@@ -21,9 +21,32 @@ typedef enum {
 } module_printer_state_t;
 
 typedef enum {
-    MODULE_PRINTER_NOTIFICATION_ONLINE = 0,
-    MODULE_PRINTER_NOTIFICATION_OFFLINE,
+    MODULE_PRINTER_GCODE_STATUS_IDLE = 0,
+    MODULE_PRINTER_GCODE_STATUS_PREPARE,
+    MODULE_PRINTER_GCODE_STATUS_RUNNING,
+    MODULE_PRINTER_GCODE_STATUS_PAUSE,
+    MODULE_PRINTER_GCODE_STATUS_FINISH,
+    MODULE_PRINTER_GCODE_STATUS_FAILED
+} module_printer_gcode_status_t;
+
+typedef enum {
+    MODULE_PRINTER_NOTIFICATION_DATA_CHANGE = 0,
 } module_printer_notification_type_t;
+
+typedef struct {
+    module_printer_state_t state;
+    bool is_dirty_state;
+    module_printer_gcode_status_t gcode_status;
+    bool is_dirty_gcode_status;
+    uint16_t bed_temp;
+    bool is_dirty_bed_temp;
+    uint16_t bed_temp_target;
+    bool is_dirty_bed_temp_target;
+    uint16_t nozzle_temp;
+    bool is_dirty_nozzle_temp;
+    uint16_t nozzle_temp_target;
+    bool is_dirty_nozzle_temp_target;
+} module_printer_parameters_t;
 
 bool MODULE_PRINTER_Init(void);
 

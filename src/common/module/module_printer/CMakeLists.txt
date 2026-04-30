@@ -4,6 +4,7 @@ idf_component_register(SRCS "module_printer.c"
                             module_mqtt
                             util_dataqueue
                             defines
+                            json
                        REQUIRES
                             esp_timer
                             freertos

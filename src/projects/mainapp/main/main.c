@@ -223,15 +223,16 @@ void app_main(void)
                 {
                     switch(dq_i.data)
                     {
-                        case MODULE_PRINTER_NOTIFICATION_ONLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "Printer: Online");
-                            s_set_screen1_status(MODULE_PRINTER_STATE_ONLINE);
+                        case MODULE_PRINTER_NOTIFICATION_DATA_CHANGE: {
+                            module_printer_parameters_t* params = (module_printer_parameters_t*)dq_i.data_buff.value.ptr;
+                            if(params && params->is_dirty_state){
+                                ESP_LOGI(DEBUG_TAG_MAIN, "Printer: %s",
+                                    params->state == MODULE_PRINTER_STATE_ONLINE ? "Online" : "Offline");
+                                s_set_screen1_status(params->state);
+                                params->is_dirty_state = false;
+                            }
                             break;
-
-                        case MODULE_PRINTER_NOTIFICATION_OFFLINE:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "Printer: Offline");
-                            s_set_screen1_status(MODULE_PRINTER_STATE_OFFLINE);
-                            break;
+                        }
 
                         default:
                             break;
