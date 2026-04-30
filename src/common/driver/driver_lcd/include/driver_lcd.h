@@ -14,13 +14,20 @@
 #define DRIVER_LCD_LVGL_TICK_PERIOD_MS      (2)
 #define DRIVER_LCD_LVGL_TASK_PERIOD_MS      (50)
 
-#define DRIVER_LCD_DISPLAY_HRES             (170)
+#define DRIVER_LCD_DISPLAY_HRES             (240)
 #define DRIVER_LCD_DISPLAY_VRES             (320)
 
 #define DRIVER_LCD_DATAQUEUE_MAX            (4)
 
-#define DRIVER_LCD_SPI_HOST                 SPI2_HOST
-#define DRIVER_LCD_SPI_CLK_HZ               (40 * 1000 * 1000)
+#define DRIVER_LCD_SPI_HOST                 SPI3_HOST
+#define DRIVER_LCD_SPI_CLK_HZ               (80 * 1000 * 1000)
+
+#define DRIVER_LCD_LEDC_TIMER               LEDC_TIMER_0
+#define DRIVER_LCD_LEDC_MODE                LEDC_LOW_SPEED_MODE
+#define DRIVER_LCD_LEDC_CHANNEL             LEDC_CHANNEL_0
+#define DRIVER_LCD_LEDC_RESOLUTION          LEDC_TIMER_13_BIT
+#define DRIVER_LCD_LEDC_FREQ_HZ             (5000)
+#define DRIVER_LCD_LEDC_DUTY_MAX            ((1 << DRIVER_LCD_LEDC_RESOLUTION) - 1)
 
 typedef enum {
     DRIVER_LCD_COMMAND_DEMO = 0,

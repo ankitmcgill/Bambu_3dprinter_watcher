@@ -145,7 +145,7 @@ void app_main(void)
                     switch(dq_i.data)
                     {
                         case MODULE_WIFI_NOTIFICATION_APSTARTED:
-                            s_set_screen2_message("Setup Portal\nActive");
+                            s_set_screen2_message("Setup Portal\nActive\nFor %u sec", MODULE_WIFI_AP_WINDOW_SEC);
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: AP Started");
                             break;
 

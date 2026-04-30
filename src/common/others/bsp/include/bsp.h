@@ -6,21 +6,17 @@
 
 #include "driver/gpio.h"
 
-// BOARD : ESP32 Display 1.9-inch 170*320 Yellow LCD Board
-// https://www.surenoo.com/products/23377371
-// https://www.aliexpress.com/item/1005009366691313.html
-// LCD DRIVER : ST7789
-// SIZE : 1.9 INCH
-// RESOLUTION :  170 x 320
-// COLOR FORMAT : RGB 565 16 BIT
+// LCD DRIVER : ST7789T3
+// RESOLUTION : 240 x 320
+// COLOR FORMAT : RGB 666 18 BIT
 // INTERFACE : SPI
 
 // LCD PINS
-#define BSP_LCD_GPIO_RST    (GPIO_NUM_4)
-#define BSP_LCD_GPIO_DC     (GPIO_NUM_2)
-#define BSP_LCD_GPIO_CS     (GPIO_NUM_15)
-#define BSP_LCD_GPIO_SCK    (GPIO_NUM_14)
-#define BSP_LCD_GPIO_MOSI   (GPIO_NUM_13)
-#define BSP_LCD_GPIO_BL     (GPIO_NUM_21)
+#define BSP_LCD_GPIO_RST    (GPIO_NUM_39)
+#define BSP_LCD_GPIO_DC     (GPIO_NUM_41)
+#define BSP_LCD_GPIO_CS     (GPIO_NUM_42)
+#define BSP_LCD_GPIO_SCK    (GPIO_NUM_40)
+#define BSP_LCD_GPIO_MOSI   (GPIO_NUM_45)
+#define BSP_LCD_GPIO_BL     (GPIO_NUM_5)
 
 #endif

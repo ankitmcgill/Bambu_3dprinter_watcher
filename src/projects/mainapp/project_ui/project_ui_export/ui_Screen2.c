@@ -24,7 +24,7 @@ lv_obj_set_align( ui_Container13, LV_ALIGN_CENTER );
 lv_obj_set_flex_flow(ui_Container13,LV_FLEX_FLOW_COLUMN);
 lv_obj_set_flex_align(ui_Container13, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
 lv_obj_remove_flag( ui_Container13, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-lv_obj_set_style_bg_color(ui_Container13, lv_color_hex(0x0B0F14), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_color(ui_Container13, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_bg_opa(ui_Container13, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Container13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Container13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -44,7 +44,7 @@ lv_obj_set_width( ui_Screen2LabelMessage, lv_pct(100));
 lv_obj_set_height( ui_Screen2LabelMessage, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Screen2LabelMessage, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Screen2LabelMessage,"Scanning Available\nWiFi");
-lv_obj_set_style_text_color(ui_Screen2LabelMessage, lv_color_hex(0xECFF00), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_color(ui_Screen2LabelMessage, lv_color_hex(0x66D3F8), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Screen2LabelMessage, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_align(ui_Screen2LabelMessage, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Screen2LabelMessage, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);

@@ -543,7 +543,7 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
     DRIVER_WIFI_GetScanResults(&records, &count);
 
     char saved_ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
-    char saved_api_key[128] = {0};
+    char saved_api_key[256] = {0};
     char saved_user_id[64] = {0};
     char saved_device_id[64] = {0};
     char saved_region[16] = {0};
@@ -633,14 +633,14 @@ static esp_err_t s_http_post_handler(httpd_req_t *req)
 {
     // Handle Form Submission - Save Config To NVS And Initiate Connection
 
-    char body[1024] = {0};
+    char body[2048] = {0};
     int recv_len = req->content_len < (int)(sizeof(body) - 1) ? req->content_len : (int)(sizeof(body) - 1);
     if(recv_len > 0) httpd_req_recv(req, body, recv_len);
     body[recv_len] = '\0';
 
     char ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
     char pwd[DRIVER_WIFI_LEN_PWD_MAX] = {0};
-    char api_key[128] = {0};
+    char api_key[256] = {0};
     char user_id[64] = {0};
     char device_id[64] = {0};
     char region[16] = {0};
@@ -849,7 +849,7 @@ static void s_form_field(const char* body, const char* key, char* out, size_t ou
     if(!p) { out[0] = '\0'; return; }
     p += strlen(search);
 
-    char encoded[256] = {0};
+    char encoded[768] = {0};
     size_t i = 0;
     while(*p && *p != '&' && i < sizeof(encoded) - 1) encoded[i++] = *p++;
     encoded[i] = '\0';
