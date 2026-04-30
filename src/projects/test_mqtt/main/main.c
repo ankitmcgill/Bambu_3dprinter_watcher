@@ -39,8 +39,8 @@ void app_main(void)
     uint8_t buffer[50] = {0};
     uint32_t size_flash;
     uint32_t size_ram;
-    util_dataqueue_t main_dataqueue;
-    util_dataqueue_t mqtt_dataqueue;
+    static util_dataqueue_t main_dataqueue;
+    static util_dataqueue_t mqtt_dataqueue;
 
     UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
     UTIL_DATAQUEUE_Create(&mqtt_dataqueue, 8);
