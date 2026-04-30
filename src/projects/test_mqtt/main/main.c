@@ -218,7 +218,7 @@ static void s_connect_mqtt_broker(void)
     }
 
     snprintf(username, sizeof(username), "u_1725975974");
-    snprintf(topic, sizeof(topic), "device/01P00C592002285/request");
+    snprintf(topic, sizeof(topic), "device/01P00C592002285/report");
 
     MODULE_MQTT_SetCredentials(username, "AABY_woaIZ1Hfvp4eXWQCdCgP5wbbJQ0n_Tgbg9DUIk1yFP41BsKQuFa8CCEv_BP1Or3265xTCpD-_JvmT4stCpZ4wsg3IN3F0eElaGDVZErCpcQF6MQe8d5qj6cMO4WZQPMwlGI92MAObl0");
     MODULE_MQTT_SetBrokerUrl("mqtts://us.mqtt.bambulab.com:8883");
