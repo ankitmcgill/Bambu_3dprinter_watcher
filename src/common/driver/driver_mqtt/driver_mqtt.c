@@ -75,6 +75,7 @@ void DRIVER_MQTT_SetCredentials(const char* username, const char* password)
     strncpy(s_password, password, DRIVER_MQTT_PASSWORD_LEN_MAX - 1);
 
     ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Credentials Set. Username: %s", s_username);
+    ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Credentials Set. Password: %s", s_password);
 }
 
 void DRIVER_MQTT_SetBrokerUrl(const char* url)

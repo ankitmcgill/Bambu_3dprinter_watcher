@@ -9,7 +9,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#define DRIVER_NVS_API_KEY_LEN_MAX      (128)
+#define DRIVER_NVS_API_KEY_LEN_MAX      (256)
 #define DRIVER_NVS_USER_ID_LEN_MAX      (64)
 #define DRIVER_NVS_DEVICE_ID_LEN_MAX    (64)
 #define DRIVER_NVS_REGION_LEN_MAX       (16)
