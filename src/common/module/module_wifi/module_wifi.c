@@ -213,15 +213,13 @@ static void s_state_mainiter(void)
 
             if(DRIVER_WIFI_CheckSavedWifiCredentials())
             {
-                // WiFi Connect
                 s_wifi_credential_source = MODULE_WIFI_STATE_CHECK_SAVED_CREDENTIALS;
                 s_wifi_retry_count = MODULE_WIFI_WIFI_CONNECT_RETRY_MAX;
                 s_state_set(MODULE_WIFI_STATE_CONNECT);
                 break;
             }
 
-            // No Saved Credentials
-            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Saved Wi-Fi\nCredential Found");
+            ESP_LOGI(DEBUG_TAG_MODULE_WIFI, "No Saved Wi-Fi Credential Found");
             s_state_set(MODULE_WIFI_STATE_CHECK_DEFAULT_CREDENTIALS);
             break;
 
@@ -543,15 +541,17 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
     DRIVER_WIFI_GetScanResults(&records, &count);
 
     char saved_ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
+    char saved_pwd[DRIVER_WIFI_LEN_PWD_MAX]   = {0};
     char saved_api_key[256] = {0};
     char saved_user_id[64] = {0};
     char saved_device_id[64] = {0};
     char saved_region[16] = {0};
-    s_nvs_read_str(NVS_KEY_SSID, saved_ssid, sizeof(saved_ssid));
-    s_nvs_read_str(NVS_KEY_API_KEY, saved_api_key, sizeof(saved_api_key));
-    s_nvs_read_str(NVS_KEY_USER_ID, saved_user_id, sizeof(saved_user_id));
+    s_nvs_read_str(NVS_KEY_SSID,      saved_ssid,      sizeof(saved_ssid));
+    s_nvs_read_str(NVS_KEY_PWD,       saved_pwd,       sizeof(saved_pwd));
+    s_nvs_read_str(NVS_KEY_API_KEY,   saved_api_key,   sizeof(saved_api_key));
+    s_nvs_read_str(NVS_KEY_USER_ID,   saved_user_id,   sizeof(saved_user_id));
     s_nvs_read_str(NVS_KEY_DEVICE_ID, saved_device_id, sizeof(saved_device_id));
-    s_nvs_read_str(NVS_KEY_REGION, saved_region, sizeof(saved_region));
+    s_nvs_read_str(NVS_KEY_REGION,    saved_region,    sizeof(saved_region));
 
     // Build <option> tags from scan results
     char options[512] = {0};
@@ -605,7 +605,7 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
         "<select name='ssid'>%s</select>"
         "<span class='err'>Please select a Wi-Fi network</span>"
         "<label>Password</label>"
-        "<input type='text' name='pwd' placeholder='Leave blank to keep saved password'>"
+        "<input type='text' name='pwd' value=\"%s\">"
         "<label>Bambu API Key</label>"
         "<input type='text' name='api_key' value='%s' placeholder='Enter API key'>"
         "<span class='err'>API key is required</span>"
@@ -622,7 +622,7 @@ static esp_err_t s_http_get_handler(httpd_req_t *req)
         "</select>"
         "<button type='submit'>Save &amp; Connect</button>"
         "</form></body></html>",
-        options, saved_api_key, saved_user_id, saved_device_id, sel_global, sel_china);
+        options, saved_pwd, saved_api_key, saved_user_id, saved_device_id, sel_global, sel_china);
 
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, s_html_buf, strlen(s_html_buf));

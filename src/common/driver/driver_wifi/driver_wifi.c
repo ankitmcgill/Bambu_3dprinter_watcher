@@ -7,6 +7,7 @@
 #include "esp_smartconfig.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "nvs.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
@@ -111,25 +112,31 @@ bool DRIVER_WIFI_Init(void)
 
 bool DRIVER_WIFI_CheckSavedWifiCredentials(void)
 {
-    // Check If Saved Wifi Credentials Are Present
+    // Read Saved WiFi Credentials From bambu_cfg NVS
 
-    wifi_config_t wifi_cfg;
-    esp_err_t err;
+    nvs_handle_t h;
+    char ssid[DRIVER_WIFI_LEN_SSID_MAX] = {0};
+    char pwd[DRIVER_WIFI_LEN_PWD_MAX]   = {0};
 
-    memset(&wifi_cfg, 0, sizeof(wifi_cfg));
-    err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
-    if (err == ESP_OK && strlen((char *)wifi_cfg.sta.ssid) > 0) {
-        ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "Saved Wi-Fi Credential Found");
-        ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "   SSID: %s", wifi_cfg.sta.ssid);
-        ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "   Password: %s", wifi_cfg.sta.password);
-
-        // Set Credentials
-        DRIVER_WIFI_SetWifiCredentials(wifi_cfg.sta.ssid, wifi_cfg.sta.password);
-
-        return true;
+    if(nvs_open("bambu_cfg", NVS_READONLY, &h) != ESP_OK){
+        return false;
     }
 
-    return false;
+    size_t len = sizeof(ssid);
+    if(nvs_get_str(h, "ssid", ssid, &len) != ESP_OK) ssid[0] = '\0';
+    len = sizeof(pwd);
+    if(nvs_get_str(h, "pwd", pwd, &len) != ESP_OK) pwd[0] = '\0';
+
+    nvs_close(h);
+
+    if(ssid[0] == '\0'){
+        return false;
+    }
+
+    ESP_LOGI(DEBUG_TAG_DRIVER_WIFI, "Saved Wi-Fi Credential Found. SSID: %s", ssid);
+    DRIVER_WIFI_SetWifiCredentials((uint8_t*)ssid, (uint8_t*)pwd);
+
+    return true;
 }
 
 void DRIVER_WIFI_SetWifiCredentials(uint8_t* ssid, uint8_t* pwd)
