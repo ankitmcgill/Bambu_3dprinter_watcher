@@ -335,7 +335,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_nozzle_temp){
-        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.nozzle_temp);
+        snprintf(buf, sizeof(buf), "%u °C", s_printer_params.nozzle_temp);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_ACTUAL;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -344,7 +344,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_nozzle_temp_target){
-        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.nozzle_temp_target);
+        snprintf(buf, sizeof(buf), "%u °C", s_printer_params.nozzle_temp_target);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_TARGET;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -353,7 +353,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_bed_temp){
-        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.bed_temp);
+        snprintf(buf, sizeof(buf), "%u °C", s_printer_params.bed_temp);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_ACTUAL;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -362,7 +362,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_bed_temp_target){
-        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.bed_temp_target);
+        snprintf(buf, sizeof(buf), "%u °C", s_printer_params.bed_temp_target);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_TARGET;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);

@@ -1841,7 +1841,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "\\nBED\\nTEMP",
+                            "strval": "\\nBED\\nTEMP    ",
                             "InheritedType": 10
                           },
                           {
@@ -1867,7 +1867,7 @@
                                   {
                                     "nid": 10450,
                                     "strtype": "_style/Text_Font",
-                                    "strval": "montserrat_8",
+                                    "strval": "montserrat_10",
                                     "InheritedType": 3
                                   }
                                 ],
@@ -3648,7 +3648,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "\\nNOZZLE\\nTEMP",
+                            "strval": "\\nNOZZLE\\nTEMP ",
                             "InheritedType": 10
                           },
                           {
@@ -3674,7 +3674,7 @@
                                   {
                                     "nid": 10450,
                                     "strtype": "_style/Text_Font",
-                                    "strval": "montserrat_8",
+                                    "strval": "montserrat_10",
                                     "InheritedType": 3
                                   }
                                 ],
@@ -5479,7 +5479,7 @@
                                   {
                                     "nid": 10450,
                                     "strtype": "_style/Text_Font",
-                                    "strval": "montserrat_8",
+                                    "strval": "montserrat_10",
                                     "InheritedType": 3
                                   },
                                   {
@@ -6587,7 +6587,7 @@
                                   {
                                     "nid": 10450,
                                     "strtype": "_style/Text_Font",
-                                    "strval": "montserrat_8",
+                                    "strval": "montserrat_10",
                                     "InheritedType": 3
                                   }
                                 ],
@@ -8366,7 +8366,7 @@
                           {
                             "nid": 1030,
                             "strtype": "LABEL/Text",
-                            "strval": "\\nTIME\\nREMAINING",
+                            "strval": "\\nTIME\\nLEFT          ",
                             "InheritedType": 10
                           },
                           {
@@ -8392,7 +8392,7 @@
                                   {
                                     "nid": 10450,
                                     "strtype": "_style/Text_Font",
-                                    "strval": "montserrat_8",
+                                    "strval": "montserrat_10",
                                     "InheritedType": 3
                                   }
                                 ],
@@ -10280,7 +10280,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 120,
+    "backup_cnt": 122,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

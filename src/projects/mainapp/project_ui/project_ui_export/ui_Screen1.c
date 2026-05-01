@@ -97,7 +97,6 @@ lv_obj_set_width( ui_ContainerPRINTERDATA, lv_pct(100));
 lv_obj_set_flex_grow( ui_ContainerPRINTERDATA, 1);
 lv_obj_set_flex_flow(ui_ContainerPRINTERDATA,LV_FLEX_FLOW_COLUMN);
 lv_obj_set_flex_align(ui_ContainerPRINTERDATA, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-lv_obj_add_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_remove_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 lv_obj_set_style_bg_color(ui_ContainerPRINTERDATA, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_bg_opa(ui_ContainerPRINTERDATA, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -138,10 +137,10 @@ ui_Label3 = lv_label_create(ui_PanelBEDTEMP);
 lv_obj_set_height( ui_Label3, lv_pct(100));
 lv_obj_set_width( ui_Label3, LV_SIZE_CONTENT);  /// 100
 lv_obj_set_align( ui_Label3, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Label3,"\nBED\nTEMP");
+lv_label_set_text(ui_Label3,"\nBED\nTEMP    ");
 lv_obj_set_style_text_color(ui_Label3, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label3, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label3, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Label3, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Container2 = lv_obj_create(ui_PanelBEDTEMP);
 lv_obj_remove_style_all(ui_Container2);
@@ -276,10 +275,10 @@ ui_Label8 = lv_label_create(ui_PanelNOZZLETEMP);
 lv_obj_set_height( ui_Label8, lv_pct(100));
 lv_obj_set_width( ui_Label8, LV_SIZE_CONTENT);  /// 100
 lv_obj_set_align( ui_Label8, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Label8,"\nNOZZLE\nTEMP");
+lv_label_set_text(ui_Label8,"\nNOZZLE\nTEMP ");
 lv_obj_set_style_text_color(ui_Label8, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label8, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label8, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Label8, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Container5 = lv_obj_create(ui_PanelNOZZLETEMP);
 lv_obj_remove_style_all(ui_Container5);
@@ -417,7 +416,7 @@ lv_obj_set_align( ui_Label13, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Label13,"\nPRINT\nPROGRESS");
 lv_obj_set_style_text_color(ui_Label13, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label13, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label13, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Label13, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Label13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_Label13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_top(ui_Label13, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -502,7 +501,7 @@ lv_obj_set_align( ui_Label15, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Label15,"\nLAYER");
 lv_obj_set_style_text_color(ui_Label15, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label15, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label15, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Label15, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Container9 = lv_obj_create(ui_PanelLAYER);
 lv_obj_remove_style_all(ui_Container9);
@@ -637,10 +636,10 @@ ui_Label20 = lv_label_create(ui_PanelTIME);
 lv_obj_set_width( ui_Label20, LV_SIZE_CONTENT);  /// 100
 lv_obj_set_height( ui_Label20, LV_SIZE_CONTENT);   /// 100
 lv_obj_set_align( ui_Label20, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Label20,"\nTIME\nREMAINING");
+lv_label_set_text(ui_Label20,"\nTIME\nLEFT          ");
 lv_obj_set_style_text_color(ui_Label20, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label20, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_Label20, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_Label20, &lv_font_montserrat_10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Container12 = lv_obj_create(ui_PanelTIME);
 lv_obj_remove_style_all(ui_Container12);
