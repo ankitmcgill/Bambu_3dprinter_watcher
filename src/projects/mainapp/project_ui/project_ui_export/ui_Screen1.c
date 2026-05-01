@@ -97,6 +97,7 @@ lv_obj_set_width( ui_ContainerPRINTERDATA, lv_pct(100));
 lv_obj_set_flex_grow( ui_ContainerPRINTERDATA, 1);
 lv_obj_set_flex_flow(ui_ContainerPRINTERDATA,LV_FLEX_FLOW_COLUMN);
 lv_obj_set_flex_align(ui_ContainerPRINTERDATA, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+lv_obj_add_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_remove_flag( ui_ContainerPRINTERDATA, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 lv_obj_set_style_bg_color(ui_ContainerPRINTERDATA, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_bg_opa(ui_ContainerPRINTERDATA, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -441,10 +442,10 @@ lv_obj_set_width( ui_Screen1BarPRINTPROGRESS, lv_pct(95));
 lv_obj_set_align( ui_Screen1BarPRINTPROGRESS, LV_ALIGN_CENTER );
 lv_obj_set_style_radius(ui_Screen1BarPRINTPROGRESS, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_bg_color(ui_Screen1BarPRINTPROGRESS, lv_color_hex(0x6E6E6E), LV_PART_MAIN | LV_STATE_DEFAULT );
-lv_obj_set_style_bg_opa(ui_Screen1BarPRINTPROGRESS, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_bg_opa(ui_Screen1BarPRINTPROGRESS, 24, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 lv_obj_set_style_radius(ui_Screen1BarPRINTPROGRESS, 0, LV_PART_INDICATOR| LV_STATE_DEFAULT);
-lv_obj_set_style_bg_color(ui_Screen1BarPRINTPROGRESS, lv_color_hex(0x38DE78), LV_PART_INDICATOR | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_color(ui_Screen1BarPRINTPROGRESS, lv_color_hex(0x20FF00), LV_PART_INDICATOR | LV_STATE_DEFAULT );
 lv_obj_set_style_bg_opa(ui_Screen1BarPRINTPROGRESS, 255, LV_PART_INDICATOR| LV_STATE_DEFAULT);
 
 //Compensating for LVGL9.1 draw crash with bar/slider max value when top-padding is nonzero and right-padding is 0
@@ -454,7 +455,7 @@ lv_obj_set_width( ui_Screen1LabelPrintProgress, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_Screen1LabelPrintProgress, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Screen1LabelPrintProgress, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Screen1LabelPrintProgress,"% COMPLETE");
-lv_obj_set_style_text_color(ui_Screen1LabelPrintProgress, lv_color_hex(0x38DE78), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_color(ui_Screen1LabelPrintProgress, lv_color_hex(0x20FF00), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Screen1LabelPrintProgress, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Screen1LabelPrintProgress, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_Screen1LabelPrintProgress, 0, LV_PART_MAIN| LV_STATE_DEFAULT);

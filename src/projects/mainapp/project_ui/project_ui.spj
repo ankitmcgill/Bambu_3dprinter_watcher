@@ -5667,7 +5667,7 @@
                                           110,
                                           110,
                                           110,
-                                          255
+                                          24
                                         ],
                                         "InheritedType": 7
                                       }
@@ -5698,9 +5698,9 @@
                                         "flags": 4096,
                                         "strtype": "_style/Bg_Color",
                                         "intarray": [
-                                          56,
-                                          222,
-                                          120,
+                                          32,
+                                          255,
+                                          0,
                                           255
                                         ],
                                         "InheritedType": 7
@@ -5858,9 +5858,9 @@
                                         "flags": 4096,
                                         "strtype": "_style/Text_Color",
                                         "intarray": [
-                                          56,
-                                          222,
-                                          120,
+                                          32,
+                                          255,
+                                          0,
                                           255
                                         ],
                                         "InheritedType": 7
@@ -10280,7 +10280,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 123,
+    "backup_cnt": 130,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",
