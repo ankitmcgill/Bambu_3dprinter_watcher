@@ -30,7 +30,15 @@
             "nozzle_target_temper": 0,
             "bed_temper": 29.03125,
             "bed_target_temper": 0,
-
+3. To get the full printer report (do it once after the printer is online), publish the following data to the topic device/01P00C592002285/request
+  {
+    "pushing": {
+        "sequence_id": "0",
+        "command": "pushall",
+        "version": 1,
+        "push_target": 1
+    }
+}
 
 
 - id: 79da7676-37da-45ab-8ef8-f2a4c07a29db

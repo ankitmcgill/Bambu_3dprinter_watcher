@@ -26,6 +26,7 @@ static util_dataqueue_t* s_notification_targets[DRIVER_MQTT_NOTIFICATION_TARGET_
 static esp_mqtt_client_handle_t s_mqtt_client;
 static char s_broker_url[DRIVER_MQTT_URL_LEN_MAX];
 static char s_topic[DRIVER_MQTT_TOPIC_LEN_MAX];
+static char s_topic_publish[DRIVER_MQTT_TOPIC_PUBLISH_LEN_MAX];
 static char s_username[DRIVER_MQTT_USERNAME_LEN_MAX];
 static char s_password[DRIVER_MQTT_PASSWORD_LEN_MAX];
 
@@ -49,10 +50,11 @@ bool DRIVER_MQTT_Init(void)
     UTIL_DATAQUEUE_Create(&s_dataqueue, DRIVER_MQTT_DATAQUEUE_MAX);
     s_notification_targets_count = 0;
 
-    memset(s_broker_url, 0, sizeof(s_broker_url));
-    memset(s_topic,      0, sizeof(s_topic));
-    memset(s_username,   0, sizeof(s_username));
-    memset(s_password,   0, sizeof(s_password));
+    memset(s_broker_url,   0, sizeof(s_broker_url));
+    memset(s_topic,        0, sizeof(s_topic));
+    memset(s_topic_publish,0, sizeof(s_topic_publish));
+    memset(s_username,     0, sizeof(s_username));
+    memset(s_password,     0, sizeof(s_password));
 
     // Create Driver Mqtt Task
     xTaskCreate(
@@ -94,6 +96,15 @@ void DRIVER_MQTT_SetTopic(const char* topic)
     strncpy(s_topic, topic, DRIVER_MQTT_TOPIC_LEN_MAX - 1);
 
     ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Topic Set: %s", s_topic);
+}
+
+void DRIVER_MQTT_SetTopicPublish(const char* topic)
+{
+    // Set Mqtt Publish Topic
+
+    strncpy(s_topic_publish, topic, DRIVER_MQTT_TOPIC_PUBLISH_LEN_MAX - 1);
+
+    ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Publish Topic Set: %s", s_topic_publish);
 }
 
 bool DRIVER_MQTT_AddCommand(util_dataqueue_item_t* dq_i)
@@ -189,6 +200,28 @@ static void s_task_function(void *pvParameters)
 
                             ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Connecting to %s", s_broker_url);
                             esp_mqtt_client_start(s_mqtt_client);
+                            break;
+                        }
+
+                        case DRIVER_MQTT_COMMAND_PUBLISH: {
+                            char* payload = (char*)dq_i.data_buff.value.ptr;
+                            if(s_mqtt_client && s_topic_publish[0] != '\0' && payload){
+                                int msg_id = esp_mqtt_client_publish(
+                                    s_mqtt_client,
+                                    s_topic_publish,
+                                    payload,
+                                    0,
+                                    0,
+                                    0
+                                );
+                                ESP_LOGI(DEBUG_TAG_DRIVER_MQTT, "Published to %s (msg_id=%d)", s_topic_publish, msg_id);
+                            } else {
+                                ESP_LOGW(DEBUG_TAG_DRIVER_MQTT, "Publish skipped: client=%s topic=%s payload=%s",
+                                    s_mqtt_client ? "ok" : "null",
+                                    s_topic_publish[0] ? s_topic_publish : "empty",
+                                    payload ? "ok" : "null");
+                            }
+                            free(payload);
                             break;
                         }
 

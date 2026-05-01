@@ -18,9 +18,11 @@
 #define DRIVER_MQTT_PASSWORD_LEN_MAX            (256)
 #define DRIVER_MQTT_URL_LEN_MAX                 (64)
 #define DRIVER_MQTT_TOPIC_LEN_MAX               (64)
+#define DRIVER_MQTT_TOPIC_PUBLISH_LEN_MAX       (64)
 
 typedef enum {
     DRIVER_MQTT_COMMAND_CONNECT = 0,
+    DRIVER_MQTT_COMMAND_PUBLISH,
 }driver_mqtt_command_type_t;
 
 typedef enum {
@@ -34,6 +36,7 @@ bool DRIVER_MQTT_Init(void);
 void DRIVER_MQTT_SetCredentials(const char* username, const char* password);
 void DRIVER_MQTT_SetBrokerUrl(const char* url);
 void DRIVER_MQTT_SetTopic(const char* topic);
+void DRIVER_MQTT_SetTopicPublish(const char* topic);
 
 bool DRIVER_MQTT_AddCommand(util_dataqueue_item_t* dq_i);
 bool DRIVER_MQTT_AddNotificationTarget(util_dataqueue_t* dq);

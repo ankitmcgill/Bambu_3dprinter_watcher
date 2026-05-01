@@ -2,6 +2,7 @@
 // APRIL 30, 2026
 
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "freertos/FreeRTOS.h"
@@ -12,6 +13,7 @@
 
 #include "module_printer.h"
 #include "module_mqtt.h"
+#include "driver_nvs.h"
 #include "define_common_data_types.h"
 #include "define_rtos_tasks.h"
 
@@ -129,6 +131,28 @@ static void s_state_mainiter(void)
                 s_printer_params.state = s_state;
                 s_printer_params.is_dirty_state = true;
                 s_notify(MODULE_PRINTER_NOTIFICATION_DATA_CHANGE);
+
+                // Request full status push from printer on coming online
+                char* payload = strdup(
+                    "{\"pushing\":{"
+                        "\"sequence_id\":\"0\","
+                        "\"command\":\"pushall\","
+                        "\"version\":1,"
+                        "\"push_target\":1"
+                    "}}"
+                );
+                if(payload){
+                    util_dataqueue_item_t pub = {
+                        .data_type = DATA_TYPE_COMMAND,
+                        .data      = MODULE_MQTT_COMMAND_PUBLISH,
+                    };
+                    pub.data_buff.value.ptr = payload;
+                    if(!MODULE_MQTT_AddCommand(&pub)){
+                        free(payload);
+                    }
+                    ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Sent pushall request");
+                }
+
                 s_state_prev = s_state;
             }
             break;
@@ -159,14 +183,13 @@ static void s_parse_mqtt_data(const char* json_str)
         cJSON_Delete(root);
         return;
     }
-
     bool changed = false;
 
     cJSON* gcode_state = cJSON_GetObjectItem(print, "gcode_state");
     if(cJSON_IsString(gcode_state)){
         const char* val = gcode_state->valuestring;
         module_printer_gcode_status_t new_status = s_printer_params.gcode_status;
-        if     (strcmp(val, "IDLE")    == 0) new_status = MODULE_PRINTER_GCODE_STATUS_IDLE;
+        if (strcmp(val, "IDLE")    == 0) new_status = MODULE_PRINTER_GCODE_STATUS_IDLE;
         else if(strcmp(val, "PREPARE") == 0) new_status = MODULE_PRINTER_GCODE_STATUS_PREPARE;
         else if(strcmp(val, "RUNNING") == 0) new_status = MODULE_PRINTER_GCODE_STATUS_RUNNING;
         else if(strcmp(val, "PAUSE")   == 0) new_status = MODULE_PRINTER_GCODE_STATUS_PAUSE;
@@ -246,8 +269,9 @@ static void s_task_function(void* pvParameters)
                 {
                     switch(dq_i.data)
                     {
-                        case MODULE_MQTT_NOTIFICATION_CONNECTED:
+                        case MODULE_MQTT_NOTIFICATION_CONNECTED: {
                             // MQTT connected — start timeout; printer must respond within window
+                            ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "MQTT: Connected");
                             if(esp_timer_is_active(s_online_timer)){
                                 ESP_ERROR_CHECK(esp_timer_stop(s_online_timer));
                             }
@@ -255,9 +279,20 @@ static void s_task_function(void* pvParameters)
                                 s_online_timer,
                                 (uint64_t)MODULE_PRINTER_ONLINE_TIMEOUT_SEC * 1000000
                             ));
+
+                            // Set publish topic from NVS device_id
+                            driver_nvs_config_t* cfg = DRIVER_NVS_ReadConfig();
+                            if(cfg && cfg->device_id[0] != '\0'){
+                                char topic[DRIVER_NVS_DEVICE_ID_LEN_MAX + 32];
+                                snprintf(topic, sizeof(topic), "device/%s/request", cfg->device_id);
+                                MODULE_MQTT_SetTopicPublish(topic);
+                                ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Publish topic: %s", topic);
+                            }
                             break;
+                        }
 
                         case MODULE_MQTT_NOTIFICATION_DISCONNECTED:
+                            ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "MQTT: Disconnected");
                             // MQTT lost — stop timer and go offline immediately
                             if(esp_timer_is_active(s_online_timer)){
                                 ESP_ERROR_CHECK(esp_timer_stop(s_online_timer));
@@ -266,6 +301,7 @@ static void s_task_function(void* pvParameters)
                             break;
 
                         case MODULE_MQTT_NOTIFICATION_DATA_RECEIVED: {
+                            ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "MQTT: Data Received");
                             char* data = (char*)dq_i.data_buff.value.mqtt_data;
                             // Reset timeout window and go/stay online
                             if(esp_timer_is_active(s_online_timer)){

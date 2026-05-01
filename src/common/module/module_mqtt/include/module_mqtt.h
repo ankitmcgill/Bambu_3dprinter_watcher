@@ -26,6 +26,7 @@ typedef enum {
 typedef enum {
     MODULE_MQTT_COMMAND_CONNECT = 0,
     MODULE_MQTT_COMMAND_DISCONNECT,
+    MODULE_MQTT_COMMAND_PUBLISH,
 }module_mqtt_command_type_t;
 
 typedef enum {
@@ -39,6 +40,7 @@ bool MODULE_MQTT_Init(void);
 void MODULE_MQTT_SetCredentials(const char* username, const char* password);
 void MODULE_MQTT_SetBrokerUrl(const char* url);
 void MODULE_MQTT_SetTopic(const char* topic);
+void MODULE_MQTT_SetTopicPublish(const char* topic);
 
 bool MODULE_MQTT_AddCommand(util_dataqueue_item_t* dq_i);
 bool MODULE_MQTT_AddNotificationTarget(util_dataqueue_t* dq);

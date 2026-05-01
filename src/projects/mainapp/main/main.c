@@ -23,7 +23,6 @@
 
 // Local Variables
 static util_dataqueue_t main_dataqueue;
-static util_dataqueue_t mqtt_dataqueue;
 static util_dataqueue_t printer_dataqueue;
 static module_printer_parameters_t s_printer_params;
 
@@ -52,7 +51,6 @@ void app_main(void)
     uint32_t size_ram;
 
     UTIL_DATAQUEUE_Create(&main_dataqueue, 8);
-    UTIL_DATAQUEUE_Create(&mqtt_dataqueue, 8);
     UTIL_DATAQUEUE_Create(&printer_dataqueue, 8);
     size_flash = DRIVER_CHIPINFO_GetFlashSizeBytes();
     size_ram = DRIVER_CHIPINFO_GetRamSizeBytes();
@@ -120,11 +118,9 @@ void app_main(void)
     MODULE_MQTT_Init();
     DRIVER_NVS_Init();
 
-    // Subscribe To Module Mqtt Notifications
-    MODULE_MQTT_AddNotificationTarget(&mqtt_dataqueue);
-
     // Initialize Printer Module
     MODULE_PRINTER_Init();
+    // Subscribe To Module Printer Notifications
     MODULE_PRINTER_AddNotificationTarget(&printer_dataqueue);
 
     // Wifi cycle starts automatically after AP window expires (see module_wifi)
@@ -180,33 +176,6 @@ void app_main(void)
                             dq_i.data = DRIVER_LCD_COMMAND_LOAD_UI_SCREEN;
                             dq_i.data_buff.value.uint8 = DRIVER_LCD_SCREEN_HOME;
                             DRIVER_LCD_AddCommand(&dq_i);
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-        }
-
-        if(UTIL_DATAQUEUE_MessageCheck(&mqtt_dataqueue))
-        {
-            if(UTIL_DATAQUEUE_MessageGet(&mqtt_dataqueue, &dq_i, 0))
-            {
-                if(dq_i.data_type == DATA_TYPE_NOTIFICATION)
-                {
-                    switch(dq_i.data)
-                    {
-                        case MODULE_MQTT_NOTIFICATION_CONNECTED:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Connected");
-                            break;
-
-                        case MODULE_MQTT_NOTIFICATION_DISCONNECTED:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Disconnected");
-                            break;
-
-                        case MODULE_MQTT_NOTIFICATION_DATA_RECEIVED:
-                            ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: Data Received");
                             break;
 
                         default:

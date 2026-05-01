@@ -96,6 +96,13 @@ void MODULE_MQTT_SetTopic(const char* topic)
     DRIVER_MQTT_SetTopic(topic);
 }
 
+void MODULE_MQTT_SetTopicPublish(const char* topic)
+{
+    // Set Mqtt Publish Topic
+
+    DRIVER_MQTT_SetTopicPublish(topic);
+}
+
 bool MODULE_MQTT_AddCommand(util_dataqueue_item_t* dq_i)
 {
     // Add Command
@@ -245,6 +252,17 @@ static void s_task_function(void *pvParameters)
                             s_state_set(MODULE_MQTT_STATE_IDLE);
                             break;
 
+                        case MODULE_MQTT_COMMAND_PUBLISH: {
+                            util_dataqueue_item_t pub = {
+                                .data_type = DATA_TYPE_COMMAND,
+                                .data      = DRIVER_MQTT_COMMAND_PUBLISH,
+                            };
+                            pub.data_buff.value.ptr = s_dq_i.data_buff.value.ptr;
+                            s_dq_i.data_buff.value.ptr = NULL;
+                            DRIVER_MQTT_AddCommand(&pub);
+                            break;
+                        }
+
                         default:
                             break;
                     }
@@ -270,10 +288,10 @@ static void s_task_function(void *pvParameters)
                                 .data_type = DATA_TYPE_NOTIFICATION,
                                 .data      = MODULE_MQTT_NOTIFICATION_DATA_RECEIVED,
                             };
-                            s_notify(&out, 0);
-
-                            free(s_dq_i.data_buff.value.mqtt_data);
+                            out.data_buff.value.mqtt_data = s_dq_i.data_buff.value.mqtt_data;
                             s_dq_i.data_buff.value.mqtt_data = NULL;
+                            s_notify(&out, 0);
+                            // Ownership of the buffer transfers to the notification receiver (module_printer)
                             break;
                         }
 
