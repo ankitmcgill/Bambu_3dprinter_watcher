@@ -360,6 +360,41 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_MODE:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelMODE, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_MODE - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_ACTUAL:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelBEDTEMPACTUAL, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_ACTUAL - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_TARGET:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelBEDTEMPTARGET, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_TARGET - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_ACTUAL:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelNOZZLETEMPACTUAL, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_ACTUAL - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_TARGET:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelNOZZLETEMPTARGET, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_TARGET - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
                         default:
                             break;
                     }

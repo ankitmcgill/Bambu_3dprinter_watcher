@@ -25,11 +25,12 @@
 static util_dataqueue_t main_dataqueue;
 static util_dataqueue_t mqtt_dataqueue;
 static util_dataqueue_t printer_dataqueue;
+static module_printer_parameters_t s_printer_params;
 
 // Local Functions
 static void s_connect_mqtt_broker(void);
 static void s_set_screen2_message(const char* format, ...);
-static void s_set_screen1_status(module_printer_state_t status);
+static void s_on_printer_data_change(void);
 
 void app_main(void)
 {
@@ -224,13 +225,39 @@ void app_main(void)
                     switch(dq_i.data)
                     {
                         case MODULE_PRINTER_NOTIFICATION_DATA_CHANGE: {
-                            module_printer_parameters_t* params = (module_printer_parameters_t*)dq_i.data_buff.value.ptr;
-                            if(params && params->is_dirty_state){
-                                ESP_LOGI(DEBUG_TAG_MAIN, "Printer: %s",
-                                    params->state == MODULE_PRINTER_STATE_ONLINE ? "Online" : "Offline");
-                                s_set_screen1_status(params->state);
-                                params->is_dirty_state = false;
+                            module_printer_parameters_t* src = (module_printer_parameters_t*)dq_i.data_buff.value.ptr;
+                            if(!src) break;
+                            if(src->is_dirty_state){
+                                s_printer_params.state = src->state;
+                                s_printer_params.is_dirty_state = true;
+                                src->is_dirty_state = false;
                             }
+                            if(src->is_dirty_gcode_status){
+                                s_printer_params.gcode_status = src->gcode_status;
+                                s_printer_params.is_dirty_gcode_status = true;
+                                src->is_dirty_gcode_status = false;
+                            }
+                            if(src->is_dirty_nozzle_temp){
+                                s_printer_params.nozzle_temp = src->nozzle_temp;
+                                s_printer_params.is_dirty_nozzle_temp = true;
+                                src->is_dirty_nozzle_temp = false;
+                            }
+                            if(src->is_dirty_nozzle_temp_target){
+                                s_printer_params.nozzle_temp_target = src->nozzle_temp_target;
+                                s_printer_params.is_dirty_nozzle_temp_target = true;
+                                src->is_dirty_nozzle_temp_target = false;
+                            }
+                            if(src->is_dirty_bed_temp){
+                                s_printer_params.bed_temp = src->bed_temp;
+                                s_printer_params.is_dirty_bed_temp = true;
+                                src->is_dirty_bed_temp = false;
+                            }
+                            if(src->is_dirty_bed_temp_target){
+                                s_printer_params.bed_temp_target = src->bed_temp_target;
+                                s_printer_params.is_dirty_bed_temp_target = true;
+                                src->is_dirty_bed_temp_target = false;
+                            }
+                            s_on_printer_data_change();
                             break;
                         }
 
@@ -299,28 +326,92 @@ static void s_set_screen2_message(const char* format, ...)
     DRIVER_LCD_AddCommand(&dq_i);
 }
 
-static void s_set_screen1_status(module_printer_state_t status)
+static void s_on_printer_data_change(void)
 {
-    // Set Screen1 Status Label Text And Panel Background Color
+    // Send Driver LCD Commands For All Dirty Printer Parameters
 
     util_dataqueue_item_t dq_i;
+    char buf[16];
 
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS;
-    strncpy(dq_i.data_buff.value.msg,
-            (status == MODULE_PRINTER_STATE_ONLINE) ? "ONLINE" : "OFFLINE",
-            sizeof(dq_i.data_buff.value.msg) - 1);
-    DRIVER_LCD_AddCommand(&dq_i);
+    if(s_printer_params.is_dirty_state){
+        module_printer_state_t state = s_printer_params.state;
 
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR;
-    dq_i.data_buff.value.uint8 = (status == MODULE_PRINTER_STATE_ONLINE)
-        ? DRIVER_LCD_STATUS_COLOR_GREEN
-        : DRIVER_LCD_STATUS_COLOR_RED;
-    DRIVER_LCD_AddCommand(&dq_i);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_MESSAGE_STATUS;
+        strncpy(dq_i.data_buff.value.msg,
+                (state == MODULE_PRINTER_STATE_ONLINE) ? "ONLINE" : "OFFLINE",
+                sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
 
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PRINTERDATA_VISIBLE;
-    dq_i.data_buff.value.uint8 = (status == MODULE_PRINTER_STATE_ONLINE) ? 1 : 0;
-    DRIVER_LCD_AddCommand(&dq_i);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PANEL_STATUS_COLOR;
+        dq_i.data_buff.value.uint8 = (state == MODULE_PRINTER_STATE_ONLINE)
+            ? DRIVER_LCD_STATUS_COLOR_GREEN
+            : DRIVER_LCD_STATUS_COLOR_RED;
+        DRIVER_LCD_AddCommand(&dq_i);
+
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PRINTERDATA_VISIBLE;
+        dq_i.data_buff.value.uint8 = (state == MODULE_PRINTER_STATE_ONLINE) ? 1 : 0;
+        DRIVER_LCD_AddCommand(&dq_i);
+
+        ESP_LOGI(DEBUG_TAG_MAIN, "Printer state: %s", (state == MODULE_PRINTER_STATE_ONLINE) ? "Online" : "Offline");
+        s_printer_params.is_dirty_state = false;
+    }
+
+    if(s_printer_params.is_dirty_gcode_status){
+        const char* mode_str;
+        switch(s_printer_params.gcode_status){
+            case MODULE_PRINTER_GCODE_STATUS_IDLE:    mode_str = "IDLE";    break;
+            case MODULE_PRINTER_GCODE_STATUS_PREPARE: mode_str = "PREPARE"; break;
+            case MODULE_PRINTER_GCODE_STATUS_RUNNING: mode_str = "RUNNING"; break;
+            case MODULE_PRINTER_GCODE_STATUS_PAUSE:   mode_str = "PAUSE";   break;
+            case MODULE_PRINTER_GCODE_STATUS_FINISH:  mode_str = "FINISH";  break;
+            case MODULE_PRINTER_GCODE_STATUS_FAILED:  mode_str = "FAILED";  break;
+            default:                                   mode_str = "";        break;
+        }
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_MODE;
+        strncpy(dq_i.data_buff.value.msg, mode_str, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+
+        ESP_LOGI(DEBUG_TAG_MAIN, "Printer gcode: %s", mode_str);
+        s_printer_params.is_dirty_gcode_status = false;
+    }
+
+    if(s_printer_params.is_dirty_nozzle_temp){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.nozzle_temp);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_ACTUAL;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_nozzle_temp = false;
+    }
+
+    if(s_printer_params.is_dirty_nozzle_temp_target){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.nozzle_temp_target);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_TARGET;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_nozzle_temp_target = false;
+    }
+
+    if(s_printer_params.is_dirty_bed_temp){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.bed_temp);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_ACTUAL;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_bed_temp = false;
+    }
+
+    if(s_printer_params.is_dirty_bed_temp_target){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.bed_temp_target);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_TARGET;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_bed_temp_target = false;
+    }
 }
