@@ -46,7 +46,7 @@ extern lv_obj_t *ui_Image5;
 extern lv_obj_t *ui_Label13;
 extern lv_obj_t *ui_Container8;
 extern lv_obj_t *ui_Screen1BarPRINTPROGRESS;
-extern lv_obj_t *ui_Label14;
+extern lv_obj_t *ui_Screen1LabelPrintProgress;
 extern lv_obj_t *ui_PanelLAYER;
 extern lv_obj_t *ui_Image4;
 extern lv_obj_t *ui_Label15;

@@ -46,6 +46,14 @@ typedef struct {
     bool is_dirty_nozzle_temp;
     uint16_t nozzle_temp_target;
     bool is_dirty_nozzle_temp_target;
+    uint8_t print_progress_percentage;
+    bool is_dirty_print_progress_percentage;
+    uint16_t current_layer;
+    bool is_dirty_current_layer;
+    uint16_t total_layer;
+    bool is_dirty_total_layer;
+    uint32_t time_remaining_s;
+    bool is_dirty_time_remaining_s;
 } module_printer_parameters_t;
 
 bool MODULE_PRINTER_Init(void);

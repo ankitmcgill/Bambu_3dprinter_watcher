@@ -395,6 +395,40 @@ static void s_task_lvgl(void *arg)
                             #endif
                             break;
 
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_ACTUAL:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelLAYERCURRENT, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_ACTUAL - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_TARGET:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelLAYERTOTAL, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_TARGET - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_TIME_REMAINING:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            lv_label_set_text(ui_Screen1LabelTIMEREMAINING, dq_i.data_buff.value.msg);
+                            ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_TIME_REMAINING - %s", dq_i.data_buff.value.msg);
+                            #endif
+                            break;
+
+                        case DRIVER_LCD_COMMAND_SET_SCREEN1_PROGRESS:
+                            #ifdef DRIVER_LCD_HAS_PROJECT_UI
+                            {
+                                int32_t pct = (int32_t)dq_i.data_buff.value.uint8;
+                                lv_bar_set_value(ui_Screen1BarPRINTPROGRESS, pct, LV_ANIM_OFF);
+                                char progress_str[16];
+                                snprintf(progress_str, sizeof(progress_str), "%"PRId32"%% COMPLETE", pct);
+                                lv_label_set_text(ui_Screen1LabelPrintProgress, progress_str);
+                                ESP_LOGI(DEBUG_TAG_DRIVER_LCD, "DRIVER_LCD_COMMAND_SET_SCREEN1_PROGRESS - %s", progress_str);
+                            }
+                            #endif
+                            break;
+
                         default:
                             break;
                     }

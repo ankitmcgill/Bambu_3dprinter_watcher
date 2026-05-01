@@ -2053,30 +2053,6 @@
                                             "strtype": "_style/Text_Font",
                                             "strval": "montserrat_16",
                                             "InheritedType": 3
-                                          },
-                                          {
-                                            "nid": 10710,
-                                            "flags": 4096,
-                                            "strtype": "_style/Border_Color",
-                                            "intarray": [
-                                              92,
-                                              92,
-                                              92,
-                                              255
-                                            ],
-                                            "InheritedType": 7
-                                          },
-                                          {
-                                            "nid": 10720,
-                                            "strtype": "_style/Border width",
-                                            "integer": 1,
-                                            "InheritedType": 6
-                                          },
-                                          {
-                                            "nid": 10730,
-                                            "strtype": "_style/Border side",
-                                            "strval": "RIGHT",
-                                            "InheritedType": 3
                                           }
                                         ],
                                         "InheritedType": 1
@@ -3883,30 +3859,6 @@
                                             "nid": 10450,
                                             "strtype": "_style/Text_Font",
                                             "strval": "montserrat_16",
-                                            "InheritedType": 3
-                                          },
-                                          {
-                                            "nid": 10710,
-                                            "flags": 4096,
-                                            "strtype": "_style/Border_Color",
-                                            "intarray": [
-                                              92,
-                                              92,
-                                              92,
-                                              255
-                                            ],
-                                            "InheritedType": 7
-                                          },
-                                          {
-                                            "nid": 10720,
-                                            "strtype": "_style/Border width",
-                                            "integer": 1,
-                                            "InheritedType": 6
-                                          },
-                                          {
-                                            "nid": 10730,
-                                            "strtype": "_style/Border side",
-                                            "strval": "RIGHT",
                                             "InheritedType": 3
                                           }
                                         ],
@@ -5771,7 +5723,7 @@
                               {
                                 "nid": 10,
                                 "strtype": "OBJECT/Name",
-                                "strval": "Label14",
+                                "strval": "Screen1LabelPrintProgress",
                                 "InheritedType": 10
                               },
                               {
@@ -6820,30 +6772,6 @@
                                             "nid": 10450,
                                             "strtype": "_style/Text_Font",
                                             "strval": "montserrat_16",
-                                            "InheritedType": 3
-                                          },
-                                          {
-                                            "nid": 10710,
-                                            "flags": 4096,
-                                            "strtype": "_style/Border_Color",
-                                            "intarray": [
-                                              92,
-                                              92,
-                                              92,
-                                              255
-                                            ],
-                                            "InheritedType": 7
-                                          },
-                                          {
-                                            "nid": 10720,
-                                            "strtype": "_style/Border width",
-                                            "integer": 1,
-                                            "InheritedType": 6
-                                          },
-                                          {
-                                            "nid": 10730,
-                                            "strtype": "_style/Border side",
-                                            "strval": "RIGHT",
                                             "InheritedType": 3
                                           }
                                         ],
@@ -9471,7 +9399,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "",
+                                "strval": "IDLE",
                                 "InheritedType": 10
                               },
                               {
@@ -9497,7 +9425,7 @@
                                       {
                                         "nid": 10450,
                                         "strtype": "_style/Text_Font",
-                                        "strval": "montserrat_10",
+                                        "strval": "montserrat_14",
                                         "InheritedType": 3
                                       }
                                     ],
@@ -10352,7 +10280,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 115,
+    "backup_cnt": 120,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

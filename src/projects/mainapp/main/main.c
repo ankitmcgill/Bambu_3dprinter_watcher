@@ -225,6 +225,27 @@ void app_main(void)
                                 s_printer_params.is_dirty_bed_temp_target = true;
                                 src->is_dirty_bed_temp_target = false;
                             }
+                            //
+                            if(src->is_dirty_print_progress_percentage){
+                                s_printer_params.print_progress_percentage = src->print_progress_percentage;
+                                s_printer_params.is_dirty_print_progress_percentage = true;
+                                src->is_dirty_print_progress_percentage = false;
+                            }
+                            if(src->is_dirty_current_layer){
+                                s_printer_params.current_layer = src->current_layer;
+                                s_printer_params.is_dirty_current_layer = true;
+                                src->is_dirty_current_layer = false;
+                            }
+                            if(src->is_dirty_total_layer){
+                                s_printer_params.total_layer = src->total_layer;
+                                s_printer_params.is_dirty_total_layer = true;
+                                src->is_dirty_total_layer = false;
+                            }
+                            if(src->is_dirty_time_remaining_s){
+                                s_printer_params.time_remaining_s = src->time_remaining_s;
+                                s_printer_params.is_dirty_time_remaining_s = true;
+                                src->is_dirty_time_remaining_s = false;
+                            }
                             s_on_printer_data_change();
                             break;
                         }
@@ -314,7 +335,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_nozzle_temp){
-        snprintf(buf, sizeof(buf), "%u", s_printer_params.nozzle_temp);
+        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.nozzle_temp);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_ACTUAL;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -323,7 +344,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_nozzle_temp_target){
-        snprintf(buf, sizeof(buf), "%u", s_printer_params.nozzle_temp_target);
+        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.nozzle_temp_target);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_NOZZLE_TEMP_TARGET;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -332,7 +353,7 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_bed_temp){
-        snprintf(buf, sizeof(buf), "%u", s_printer_params.bed_temp);
+        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.bed_temp);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_ACTUAL;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
@@ -341,11 +362,48 @@ static void s_on_printer_data_change(void)
     }
 
     if(s_printer_params.is_dirty_bed_temp_target){
-        snprintf(buf, sizeof(buf), "%u", s_printer_params.bed_temp_target);
+        snprintf(buf, sizeof(buf), "%u ""\xB0" "C", s_printer_params.bed_temp_target);
         dq_i.data_type = DATA_TYPE_COMMAND;
         dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_BED_TEMP_TARGET;
         strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
         DRIVER_LCD_AddCommand(&dq_i);
         s_printer_params.is_dirty_bed_temp_target = false;
+    }
+
+    if(s_printer_params.is_dirty_print_progress_percentage){
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_PROGRESS;
+        dq_i.data_buff.value.uint8 = s_printer_params.print_progress_percentage;
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_print_progress_percentage = false;
+    }
+
+    if(s_printer_params.is_dirty_current_layer){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.current_layer);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_ACTUAL;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_current_layer = false;
+    }
+
+    if(s_printer_params.is_dirty_total_layer){
+        snprintf(buf, sizeof(buf), "%u", s_printer_params.total_layer);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_LAYER_TARGET;
+        strncpy(dq_i.data_buff.value.msg, buf, sizeof(dq_i.data_buff.value.msg) - 1);
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_total_layer = false;
+    }
+
+    if(s_printer_params.is_dirty_time_remaining_s){
+        uint32_t t = s_printer_params.time_remaining_s;
+        snprintf(dq_i.data_buff.value.msg, sizeof(dq_i.data_buff.value.msg),
+                 "%02"PRIu32" : %02"PRIu32" : %02"PRIu32,
+                 t / 3600, (t % 3600) / 60, t % 60);
+        dq_i.data_type = DATA_TYPE_COMMAND;
+        dq_i.data = DRIVER_LCD_COMMAND_SET_SCREEN1_LABEL_TIME_REMAINING;
+        DRIVER_LCD_AddCommand(&dq_i);
+        s_printer_params.is_dirty_time_remaining_s = false;
     }
 }

@@ -51,8 +51,16 @@ bool MODULE_PRINTER_Init(void)
     s_state_prev = -1;
     s_state_set(MODULE_PRINTER_STATE_OFFLINE);
     memset(&s_printer_params, 0, sizeof(module_printer_parameters_t));
-    s_printer_params.gcode_status = -1;
     s_ignore_message_with_nonzero_msg_id = false;
+    s_printer_params.gcode_status = -1;
+    s_printer_params.nozzle_temp = -1;
+    s_printer_params.nozzle_temp_target = -1;
+    s_printer_params.bed_temp = -1;
+    s_printer_params.bed_temp_target = -1;
+    s_printer_params.print_progress_percentage = -1;
+    s_printer_params.current_layer = -1;
+    s_printer_params.total_layer = -1;
+    s_printer_params.time_remaining_s = -1;
 
     UTIL_DATAQUEUE_Create(&s_dataqueue, MODULE_PRINTER_DATAQUEUE_MAX);
     s_notification_targets_count = 0;
@@ -304,6 +312,46 @@ static void s_parse_mqtt_data(const char* json_str)
         if(val != s_printer_params.bed_temp_target){
             s_printer_params.bed_temp_target = val;
             s_printer_params.is_dirty_bed_temp_target = true;
+            changed = true;
+        }
+    }
+
+    cJSON* mc_percent = cJSON_GetObjectItem(print, "mc_percent");
+    if(cJSON_IsNumber(mc_percent)){
+        uint8_t val = (uint8_t)mc_percent->valuedouble;
+        if(val != s_printer_params.print_progress_percentage){
+            s_printer_params.print_progress_percentage = val;
+            s_printer_params.is_dirty_print_progress_percentage = true;
+            changed = true;
+        }
+    }
+
+    cJSON* layer_num = cJSON_GetObjectItem(print, "layer_num");
+    if(cJSON_IsNumber(layer_num)){
+        uint16_t val = (uint16_t)layer_num->valuedouble;
+        if(val != s_printer_params.current_layer){
+            s_printer_params.current_layer = val;
+            s_printer_params.is_dirty_current_layer = true;
+            changed = true;
+        }
+    }
+
+    cJSON* total_layer_num = cJSON_GetObjectItem(print, "total_layer_num");
+    if(cJSON_IsNumber(total_layer_num)){
+        uint16_t val = (uint16_t)total_layer_num->valuedouble;
+        if(val != s_printer_params.total_layer){
+            s_printer_params.total_layer = val;
+            s_printer_params.is_dirty_total_layer = true;
+            changed = true;
+        }
+    }
+
+    cJSON* mc_remaining_time = cJSON_GetObjectItem(print, "mc_remaining_time");
+    if(cJSON_IsNumber(mc_remaining_time)){
+        uint32_t val = (uint32_t)(mc_remaining_time->valuedouble * 60);
+        if(val != s_printer_params.time_remaining_s){
+            s_printer_params.time_remaining_s = val;
+            s_printer_params.is_dirty_time_remaining_s = true;
             changed = true;
         }
     }
