@@ -272,7 +272,6 @@ static void s_parse_mqtt_data(const char* json_str)
             s_printer_params.gcode_status = new_status;
             s_printer_params.is_dirty_gcode_status = true;
             changed = true;
-            ESP_LOGE(DEBUG_TAG_MODULE_PRINTER,"gcode_status %u", new_status);
         }
     }
 

@@ -129,7 +129,7 @@ void app_main(void)
 
     // Turn Of Uneccesary Loggings
     esp_log_level_set("D.Wifi", ESP_LOG_NONE);
-    // esp_log_level_set("D.Lcd_Lvgl", ESP_LOG_NONE);
+    esp_log_level_set("D.Lcd_Lvgl", ESP_LOG_NONE);
 
     while(true)
     {
