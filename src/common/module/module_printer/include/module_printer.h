@@ -49,6 +49,7 @@ typedef struct {
 } module_printer_parameters_t;
 
 bool MODULE_PRINTER_Init(void);
+bool MODULE_PRINTER_Connect(void);
 
 bool MODULE_PRINTER_AddNotificationTarget(util_dataqueue_t* dq);
 

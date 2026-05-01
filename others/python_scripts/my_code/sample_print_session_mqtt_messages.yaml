@@ -1,3 +1,7 @@
+**** Summary ****
+Links:
+https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md
+
 1. if not message received on mqtt for 10 sec - printer offline
 2. if printer online
   2.1 info message has the printer model name

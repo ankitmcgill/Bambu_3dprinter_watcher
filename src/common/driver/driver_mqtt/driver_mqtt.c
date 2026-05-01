@@ -184,7 +184,7 @@ static void s_task_function(void *pvParameters)
                                     .authentication.password = s_password,
                                 },
                                 .buffer = {
-                                    .size = 4096,
+                                    .size = 4096 + 1024,
                                 },
                             };
 

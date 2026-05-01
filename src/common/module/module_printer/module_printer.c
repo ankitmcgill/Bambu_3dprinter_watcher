@@ -28,6 +28,8 @@ static uint8_t s_notification_targets_count;
 static util_dataqueue_t* s_notification_targets[MODULE_PRINTER_NOTIFICATION_TARGET_MAX];
 static rtos_component_type_t s_component_type;
 static esp_timer_handle_t s_online_timer;
+static esp_timer_handle_t s_msg_filter_timer;
+static bool s_ignore_message_with_nonzero_msg_id;
 static module_printer_parameters_t s_printer_params;
 
 // Local Functions
@@ -36,6 +38,7 @@ static void s_state_set(module_printer_state_t newstate);
 static void s_state_mainiter(void);
 static void s_task_function(void* pvParameters);
 static void s_online_timer_cb(void* arg);
+static void s_msg_filter_timer_cb(void* arg);
 static void s_parse_mqtt_data(const char* json_str);
 
 // External Functions
@@ -48,6 +51,8 @@ bool MODULE_PRINTER_Init(void)
     s_state_prev = -1;
     s_state_set(MODULE_PRINTER_STATE_OFFLINE);
     memset(&s_printer_params, 0, sizeof(module_printer_parameters_t));
+    s_printer_params.gcode_status = -1;
+    s_ignore_message_with_nonzero_msg_id = false;
 
     UTIL_DATAQUEUE_Create(&s_dataqueue, MODULE_PRINTER_DATAQUEUE_MAX);
     s_notification_targets_count = 0;
@@ -67,10 +72,52 @@ bool MODULE_PRINTER_Init(void)
     };
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &s_online_timer));
 
+    const esp_timer_create_args_t msg_filter_timer_args = {
+        .callback = s_msg_filter_timer_cb,
+        .name     = "printer-msg-filter"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&msg_filter_timer_args, &s_msg_filter_timer));
+
     // Subscribe to module_mqtt notifications
     MODULE_MQTT_AddNotificationTarget(&s_dataqueue);
 
     ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Type %u. Init", s_component_type);
+
+    return true;
+}
+
+bool MODULE_PRINTER_Connect(void)
+{
+    // Read Bambu Config From NVS, Configure Module Mqtt, And Initiate Connection
+
+    driver_nvs_config_t* cfg = DRIVER_NVS_ReadConfig();
+    if(!cfg){
+        ESP_LOGW(DEBUG_TAG_MODULE_PRINTER, "Connect: NVS read failed");
+        return false;
+    }
+
+    if(cfg->user_id[0] == '\0' || cfg->api_key[0] == '\0' || cfg->device_id[0] == '\0'){
+        ESP_LOGW(DEBUG_TAG_MODULE_PRINTER, "Connect: missing NVS fields");
+        return false;
+    }
+
+    char username[DRIVER_NVS_USER_ID_LEN_MAX + 4];
+    char topic[DRIVER_NVS_DEVICE_ID_LEN_MAX + 32];
+
+    snprintf(username, sizeof(username), "u_%s", cfg->user_id);
+    snprintf(topic,    sizeof(topic),    "device/%s/report", cfg->device_id);
+
+    MODULE_MQTT_SetCredentials(username, cfg->api_key);
+    MODULE_MQTT_SetBrokerUrl("mqtts://us.mqtt.bambulab.com:8883");
+    MODULE_MQTT_SetTopic(topic);
+
+    util_dataqueue_item_t dq_i = {
+        .data_type = DATA_TYPE_COMMAND,
+        .data      = MODULE_MQTT_COMMAND_CONNECT,
+    };
+    MODULE_MQTT_AddCommand(&dq_i);
+
+    ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Connecting as %s topic %s", username, topic);
 
     return true;
 }
@@ -183,6 +230,24 @@ static void s_parse_mqtt_data(const char* json_str)
         cJSON_Delete(root);
         return;
     }
+
+    cJSON* msg_id = cJSON_GetObjectItem(print, "msg");
+    if(cJSON_IsNumber(msg_id)){
+        if((int)msg_id->valuedouble == 0){
+            // Full pushall response — open a 5-second window, block incremental updates
+            s_ignore_message_with_nonzero_msg_id = true;
+            if(esp_timer_is_active(s_msg_filter_timer)){
+                ESP_ERROR_CHECK(esp_timer_stop(s_msg_filter_timer));
+            }
+            ESP_ERROR_CHECK(esp_timer_start_once(s_msg_filter_timer, 5000000ULL));
+            ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "msg=0 received, ignoring non-zero msg for 5s");
+        } else if(s_ignore_message_with_nonzero_msg_id){
+            ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Ignoring msg=%d (filter active)", (int)msg_id->valuedouble);
+            cJSON_Delete(root);
+            return;
+        }
+    }
+
     bool changed = false;
 
     cJSON* gcode_state = cJSON_GetObjectItem(print, "gcode_state");
@@ -199,6 +264,7 @@ static void s_parse_mqtt_data(const char* json_str)
             s_printer_params.gcode_status = new_status;
             s_printer_params.is_dirty_gcode_status = true;
             changed = true;
+            ESP_LOGE(DEBUG_TAG_MODULE_PRINTER,"gcode_status %u", new_status);
         }
     }
 
@@ -341,4 +407,13 @@ static void s_online_timer_cb(void* arg)
 
     ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Online timer expired — printer offline");
     s_state_set(MODULE_PRINTER_STATE_OFFLINE);
+}
+
+static void s_msg_filter_timer_cb(void* arg)
+{
+    // Message Filter Timer Callback
+    // Fired 5s after a msg=0 pushall response; resumes processing of incremental updates
+
+    ESP_LOGI(DEBUG_TAG_MODULE_PRINTER, "Msg filter expired — accepting all messages");
+    s_ignore_message_with_nonzero_msg_id = false;
 }

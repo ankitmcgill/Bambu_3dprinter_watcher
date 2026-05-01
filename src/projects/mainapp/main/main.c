@@ -27,7 +27,6 @@ static util_dataqueue_t printer_dataqueue;
 static module_printer_parameters_t s_printer_params;
 
 // Local Functions
-static void s_connect_mqtt_broker(void);
 static void s_set_screen2_message(const char* format, ...);
 static void s_on_printer_data_change(void);
 
@@ -130,7 +129,7 @@ void app_main(void)
 
     // Turn Of Uneccesary Loggings
     esp_log_level_set("D.Wifi", ESP_LOG_NONE);
-    esp_log_level_set("D.Lcd_Lvgl", ESP_LOG_NONE);
+    // esp_log_level_set("D.Lcd_Lvgl", ESP_LOG_NONE);
 
     while(true)
     {
@@ -167,7 +166,7 @@ void app_main(void)
                             ESP_LOGI(DEBUG_TAG_MAIN, "WiFi: Got IP %s", dq_i.data_buff.value.ip);
 
                             // Connect To Mqtt Broker & Topic
-                            s_connect_mqtt_broker();
+                            MODULE_PRINTER_Connect();
 
                             // Switch To Screen 1
                             // After 4 Second Delay
@@ -241,40 +240,6 @@ void app_main(void)
     }
 
     vTaskDelete(NULL);
-}
-
-static void s_connect_mqtt_broker(void)
-{
-    // Read Bambu Config From NVS And Configure Module Mqtt
-
-    driver_nvs_config_t* cfg;
-    util_dataqueue_item_t dq_i;
-    char username[DRIVER_NVS_USER_ID_LEN_MAX + 4];
-    char topic[DRIVER_NVS_DEVICE_ID_LEN_MAX + 32];
-
-    cfg = DRIVER_NVS_ReadConfig();
-    if(!cfg){
-        ESP_LOGW(DEBUG_TAG_MAIN, "MQTT connect: NVS read failed");
-        return;
-    }
-
-    if(cfg->user_id[0] == '\0' || cfg->api_key[0] == '\0' || cfg->device_id[0] == '\0'){
-        ESP_LOGW(DEBUG_TAG_MAIN, "MQTT connect: missing NVS fields");
-        return;
-    }
-
-    snprintf(username, sizeof(username), "u_%s", cfg->user_id);
-    snprintf(topic, sizeof(topic), "device/%s/report", cfg->device_id);
-
-    MODULE_MQTT_SetCredentials(username, cfg->api_key);
-    MODULE_MQTT_SetBrokerUrl("mqtts://us.mqtt.bambulab.com:8883");
-    MODULE_MQTT_SetTopic(topic);
-
-    dq_i.data_type = DATA_TYPE_COMMAND;
-    dq_i.data = MODULE_MQTT_COMMAND_CONNECT;
-    MODULE_MQTT_AddCommand(&dq_i);
-
-    ESP_LOGI(DEBUG_TAG_MAIN, "MQTT: connecting as %s topic %s", username, topic);
 }
 
 static void s_set_screen2_message(const char* format, ...)
