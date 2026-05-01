@@ -17,7 +17,7 @@
 #define DRIVER_LCD_DISPLAY_HRES             (240)
 #define DRIVER_LCD_DISPLAY_VRES             (320)
 
-#define DRIVER_LCD_DATAQUEUE_MAX            (8)
+#define DRIVER_LCD_DATAQUEUE_MAX            (16)
 
 #define DRIVER_LCD_SPI_HOST                 SPI3_HOST
 #define DRIVER_LCD_SPI_CLK_HZ               (80 * 1000 * 1000)

@@ -284,7 +284,7 @@ static void s_task_lvgl(void *arg)
 
     while(true)
     {
-        if(UTIL_DATAQUEUE_MessageCheck(&s_dataqueue))
+        while(UTIL_DATAQUEUE_MessageCheck(&s_dataqueue))
         {
             if(UTIL_DATAQUEUE_MessageGet(&s_dataqueue, &dq_i, 0))
             {
