@@ -8535,7 +8535,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "",
+                                "strval": "00 : 00 : 00",
                                 "InheritedType": 10
                               },
                               {
@@ -8701,7 +8701,7 @@
                               {
                                 "nid": 1030,
                                 "strtype": "LABEL/Text",
-                                "strval": "HH : MM: SS",
+                                "strval": "   HH           MM             SS",
                                 "InheritedType": 10
                               },
                               {
@@ -10280,7 +10280,7 @@
     "separate_screen_save": false,
     "hierarchy_state_save": false,
     "reverse_event_order": false,
-    "backup_cnt": 130,
+    "backup_cnt": 133,
     "autosave_cnt": 0,
     "group_color_cnt": 0,
     "imagebytearrayprefix": "",

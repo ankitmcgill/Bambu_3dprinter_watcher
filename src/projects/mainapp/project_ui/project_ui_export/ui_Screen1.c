@@ -659,7 +659,7 @@ ui_Screen1LabelTIMEREMAINING = lv_label_create(ui_Container12);
 lv_obj_set_width( ui_Screen1LabelTIMEREMAINING, lv_pct(100));
 lv_obj_set_height( ui_Screen1LabelTIMEREMAINING, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Screen1LabelTIMEREMAINING, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Screen1LabelTIMEREMAINING,"");
+lv_label_set_text(ui_Screen1LabelTIMEREMAINING,"00 : 00 : 00");
 lv_obj_set_style_text_color(ui_Screen1LabelTIMEREMAINING, lv_color_hex(0xEEEEEE), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Screen1LabelTIMEREMAINING, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Screen1LabelTIMEREMAINING, &lv_font_montserrat_18, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -668,7 +668,7 @@ ui_Label22 = lv_label_create(ui_Container12);
 lv_obj_set_width( ui_Label22, lv_pct(100));
 lv_obj_set_height( ui_Label22, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Label22, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Label22,"HH : MM: SS");
+lv_label_set_text(ui_Label22,"   HH           MM             SS");
 lv_obj_set_style_text_color(ui_Label22, lv_color_hex(0x5C5C5C), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Label22, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Label22, &lv_font_montserrat_8, LV_PART_MAIN| LV_STATE_DEFAULT);
